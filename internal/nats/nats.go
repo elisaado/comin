@@ -34,12 +34,6 @@ func (n *Nats) listen() (err error) {
 	defer n.broker.Unsubscribe(subscriber)
 
 	for event := range subscriber {
-		data, marshalErr := proto.Marshal(event)
-		if marshalErr != nil {
-			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
-			continue
-		}
-
 		if n.js == nil || n.streamErr != nil {
 			logrus.Warn("nats: jetstream not initialized, writing event to disk")
 			err := writeEventToDisk(event)
@@ -49,16 +43,34 @@ func (n *Nats) listen() (err error) {
 			continue
 		}
 
-		subject := getEventType(event)
-		_, err := n.js.Publish(context.Background(), subject, data)
+		err := n.publishEvent(event)
 		if err != nil {
-			logrus.Errorf("nats: failed to publish event: %s", err)
+			logrus.Errorf("nats: %s", err)
 			// Write to file on disk
 			err := writeEventToDisk(event)
 			if err != nil {
 				logrus.Errorf("nats: failed to write event to disk: %s", err)
 			}
 		}
+	}
+
+	return nil
+}
+
+func (n *Nats) publishEvent(event *protobuf.Event) error {
+	if n.js == nil || n.streamErr != nil {
+		return fmt.Errorf("jetstream not initialized")
+	}
+
+	data, err := proto.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("failed to marshal event: %w", err)
+	}
+
+	subject := getEventType(event)
+	_, err = n.js.Publish(context.Background(), subject, data)
+	if err != nil {
+		return fmt.Errorf("failed to publish event: %w", err)
 	}
 
 	return nil
@@ -144,16 +156,15 @@ func (n *Nats) purgeEventsFile() error {
 			break
 		}
 
-		subject := getEventType(&event)
-		eventData, marshalErr := proto.Marshal(&event)
-		if marshalErr != nil {
-			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
+		err = n.publishEvent(&event)
+		if err != nil {
+			logrus.Errorf("nats: %s", err)
 			break
 		}
 
-		_, err = n.js.Publish(context.Background(), subject, eventData)
-		if err != nil {
-			logrus.Errorf("nats: failed to publish event from file: %s", err)
+		eventData, marshalErr := proto.Marshal(&event)
+		if marshalErr != nil {
+			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
 			break
 		}
 
@@ -190,11 +201,39 @@ func (n *Nats) Start() (err error) {
 				return
 			}
 			n.js = js
-			_, n.streamErr = js.CreateStream(ctx, jetstream.StreamConfig{
-				Name: "events",
-			})
-			if n.streamErr != nil {
-				logrus.Errorf("nats: failed to create stream: %s", n.streamErr)
+			stream, err := js.Stream(ctx, "events")
+			if err != nil {
+				if err != jetstream.ErrStreamNotFound {
+					logrus.Errorf("nats: failed to get stream: %s", err)
+					n.streamErr = err
+					return
+				}
+				// Stream doesn't exist, create it
+				_, n.streamErr = js.CreateStream(ctx, jetstream.StreamConfig{
+					Name: "events",
+					Subjects: []string{
+						"eval.started",
+						"eval.finished",
+						"build.started",
+						"build.finished",
+						"confirmation.submitted",
+						"confirmation.cancelled",
+						"confirmation.confirmed",
+						"resume",
+						"suspend",
+						"deployment.started",
+						"deployment.finished",
+						"reboot.required",
+						"manager.state",
+						"fetched",
+					},
+				})
+				if n.streamErr != nil {
+					logrus.Errorf("nats: failed to create stream: %s", n.streamErr)
+				}
+			} else {
+				n.streamErr = nil
+				_ = stream
 			}
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
