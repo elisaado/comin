@@ -120,6 +120,57 @@ func writeEventToDisk(event *protobuf.Event) error {
 	return nil
 }
 
+func (n *Nats) purgeEventsFile() error {
+	filename := "/tmp/comin-events.protobuf"
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	var event protobuf.Event
+	buf := data
+	for len(buf) > 0 {
+		err := proto.Unmarshal(buf, &event)
+		if err != nil {
+			logrus.Errorf("nats: failed to unmarshal event from file: %s", err)
+			break
+		}
+
+		subject := getEventType(&event)
+		eventData, marshalErr := proto.Marshal(&event)
+		if marshalErr != nil {
+			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
+			break
+		}
+
+		_, err = n.js.Publish(context.Background(), subject, eventData)
+		if err != nil {
+			logrus.Errorf("nats: failed to publish event from file: %s", err)
+			break
+		}
+
+		buf = buf[len(eventData):]
+		event.Reset()
+	}
+
+	// Empty the file
+	err = os.WriteFile(filename, []byte{}, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to empty file: %w", err)
+	}
+
+	logrus.Infof("nats: purged events file: %s", filename)
+	return nil
+}
+
 func (n *Nats) Start() (err error) {
 	logrus.Info("nats: starting the client and listening to the event stream")
 	go n.listen()
