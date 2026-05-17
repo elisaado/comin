@@ -160,41 +160,67 @@ func (n *Nats) purgeEventsFile() error {
 		return nil
 	}
 
+	var remainingEvents []*protobuf.Event
 	count := 0
-	var event protobuf.Event
 	buf := data
 	for len(buf) > 0 {
+		var event protobuf.Event
 		err := proto.Unmarshal(buf, &event)
 		if err != nil {
 			logrus.Errorf("nats: failed to unmarshal event from file: %s", err)
 			break
 		}
 
-		err = n.publishEvent(&event)
-		if err != nil {
-			logrus.Errorf("nats: %s", err)
-			break
-		}
-
 		eventData, marshalErr := proto.Marshal(&event)
 		if marshalErr != nil {
 			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
-			break
+			// Keep the event in the file since we couldn't process it
+			remainingEvents = append(remainingEvents, &event)
+			buf = buf[len(eventData):]
+			event.Reset()
+			continue
+		}
+
+		err = n.publishEvent(&event)
+		if err != nil {
+			logrus.Errorf("nats: %s", err)
+			// Keep the event in the file since we couldn't publish it
+			remainingEvents = append(remainingEvents, &event)
+		} else {
+			count++
 		}
 
 		buf = buf[len(eventData):]
 		event.Reset()
-		count++
 	}
 
-	// Empty the file
-	err = os.WriteFile(filename, []byte{}, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to empty file: %w", err)
+	// Write back any events that failed to publish
+	if len(remainingEvents) > 0 {
+		var remainingData []byte
+		for _, e := range remainingEvents {
+			data, marshalErr := proto.Marshal(e)
+			if marshalErr != nil {
+				logrus.Errorf("nats: failed to marshal remaining event: %s", marshalErr)
+				continue
+			}
+			remainingData = append(remainingData, data...)
+		}
+		err = os.WriteFile(filename, remainingData, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write remaining events to file: %w", err)
+		}
+		n.pendingCount = len(remainingEvents)
+		logrus.Infof("nats: purged %d events from file, %d remaining: %s", count, len(remainingEvents), filename)
+	} else {
+		// Empty the file
+		err = os.WriteFile(filename, []byte{}, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to empty file: %w", err)
+		}
+		n.pendingCount = 0
+		logrus.Infof("nats: purged %d events from file: %s", count, filename)
 	}
 
-	n.pendingCount = 0
-	logrus.Infof("nats: purged %d events from file: %s", count, filename)
 	return nil
 }
 
