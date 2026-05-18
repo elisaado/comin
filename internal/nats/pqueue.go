@@ -13,6 +13,7 @@ import (
 type PersistentQueue struct {
 	db     *sql.DB
 	worker func(ctx context.Context, stream, subject string, payload []byte) error
+	sem    chan struct{}
 }
 
 type EventRow struct {
@@ -52,6 +53,7 @@ func NewPersistentQueue(dbPath string, worker func(ctx context.Context, stream, 
 	pq := &PersistentQueue{
 		db:     db,
 		worker: worker,
+		sem:    make(chan struct{}, 1),
 	}
 
 	// Start the worker goroutine
@@ -83,23 +85,34 @@ func (pq *PersistentQueue) Add(stream, subject string, payload []byte) error {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	// Signal that there's work to do (non-blocking)
+	select {
+	case pq.sem <- struct{}{}:
+	default:
+		// Semaphore already has a signal, worker will check for more events
+	}
+
 	logrus.Debugf("pqueue: added event to queue (stream=%s, subject=%s)", stream, subject)
 	return nil
 }
 
 func (pq *PersistentQueue) runWorker() {
 	for {
+		// Wait for work to be available
+		<-pq.sem
+
 		// Get the oldest event
 		event, err := pq.getNextEvent()
 		if err != nil {
 			logrus.Errorf("pqueue: failed to get next event: %s", err)
+			// Re-add to semaphore to retry
+			pq.sem <- struct{}{}
 			time.Sleep(10 * time.Second)
 			continue
 		}
 
 		if event == nil {
-			// No events in queue, wait and retry
-			time.Sleep(1 * time.Second)
+			logrus.Errorf("pqueue: no event in the table while notified by the semaphose: this should never happen: %s", err)
 			continue
 		}
 
@@ -110,8 +123,11 @@ func (pq *PersistentQueue) runWorker() {
 
 		if err != nil {
 			logrus.Errorf("pqueue: worker failed for event %d (stream=%s, subject=%s): %s", event.ID, event.Stream, event.Subject, err)
-			// Wait 10 seconds before retrying
-			time.Sleep(10 * time.Second)
+			// Re-add to semaphore to retry after 10 seconds
+			go func() {
+				time.Sleep(10 * time.Second)
+				pq.sem <- struct{}{}
+			}()
 			continue
 		}
 
@@ -120,10 +136,37 @@ func (pq *PersistentQueue) runWorker() {
 		if err != nil {
 			logrus.Errorf("pqueue: failed to remove event %d: %s", event.ID, err)
 			// Even if removal fails, continue to next event
+			// Don't re-add to semaphore since we want to try the next event
 			continue
 		}
 
+		// Event was successfully processed and removed
+		// Trigger next worker if there are more events
+		pq.triggerNextIfAvailable()
+
 		logrus.Debugf("pqueue: successfully processed and removed event %d", event.ID)
+	}
+}
+
+func (pq *PersistentQueue) triggerNextIfAvailable() {
+	// Check if there are more events
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var count int
+	err := pq.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM events").Scan(&count)
+	if err != nil {
+		logrus.Errorf("pqueue: failed to check for more events: %s", err)
+		return
+	}
+
+	if count > 0 {
+		// There are more events, signal worker
+		select {
+		case pq.sem <- struct{}{}:
+		default:
+			// Semaphore already has a signal, don't block
+		}
 	}
 }
 
