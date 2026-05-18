@@ -62,7 +62,12 @@ func (n *Nats) listen() (err error) {
 			continue
 		}
 
-		err := n.pqueue.Add("events", getEventType(event), data)
+		subject := getEventType(event)
+		stream := "events"
+		if subject == "fetched" {
+			stream = "fetched"
+		}
+		err := n.pqueue.Add(stream, subject, data)
 		if err != nil {
 			logrus.Errorf("nats: failed to add event to persistent queue: %s", err)
 		}
@@ -149,7 +154,6 @@ func (n *Nats) Start() (err error) {
 						"deployment.finished",
 						"reboot.required",
 						"manager.state",
-						"fetched",
 					},
 				})
 				if n.streamErr != nil {
@@ -158,6 +162,25 @@ func (n *Nats) Start() (err error) {
 			} else {
 				n.streamErr = nil
 				_ = stream
+			}
+
+			// Create or get the "fetched" stream
+			fetchedStream, err := js.Stream(ctx, "fetched")
+			if err != nil {
+				if err != jetstream.ErrStreamNotFound {
+					logrus.Errorf("nats: failed to get fetched stream: %s", err)
+					return
+				}
+				// Stream doesn't exist, create it
+				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
+					Name:     "fetched",
+					Subjects: []string{"fetched"},
+				})
+				if err != nil {
+					logrus.Errorf("nats: failed to create fetched stream: %s", err)
+				}
+			} else {
+				_ = fetchedStream
 			}
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
@@ -169,6 +192,18 @@ func (n *Nats) Start() (err error) {
 				return
 			}
 			n.js = js
+			// Ensure fetched stream exists on reconnect
+			ctx := context.Background()
+			_, err := js.Stream(ctx, "fetched")
+			if err != nil && err == jetstream.ErrStreamNotFound {
+				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
+					Name:     "fetched",
+					Subjects: []string{"fetched"},
+				})
+				if err != nil {
+					logrus.Errorf("nats: failed to create fetched stream on reconnect: %s", err)
+				}
+			}
 		}),
 		nats.ReconnectErrHandler(func(_ *nats.Conn, reconnectErr error) {
 			fmt.Printf("nats: reconnection failed: %s\n", reconnectErr)
