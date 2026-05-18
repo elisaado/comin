@@ -3,8 +3,6 @@ package nats
 import (
 	"context"
 	"fmt"
-	"os"
-	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -17,19 +15,40 @@ import (
 )
 
 type Nats struct {
-	manager      *manager.Manager
-	broker       *broker.Broker
-	js           jetstream.JetStream
-	streamErr    error
-	fileMu       sync.Mutex
-	pendingCount int
+	manager   *manager.Manager
+	broker    *broker.Broker
+	js        jetstream.JetStream
+	streamErr error
+	pqueue    *PersistentQueue
 }
 
 func New(m *manager.Manager, b *broker.Broker) *Nats {
-	return &Nats{
+	n := &Nats{
 		manager: m,
 		broker:  b,
 	}
+
+	// Initialize persistent queue with a worker that publishes to NATS
+	var initErr error
+	n.pqueue, initErr = NewPersistentQueue("/tmp/comin-nats-pqueue.db", n.pqueueWorker)
+	if initErr != nil {
+		logrus.Errorf("nats: failed to initialize persistent queue: %s", initErr)
+	}
+
+	return n
+}
+
+func (n *Nats) pqueueWorker(ctx context.Context, stream, subject string, payload []byte) error {
+	if n.js == nil || n.streamErr != nil {
+		return fmt.Errorf("jetstream not initialized")
+	}
+
+	_, err := n.js.Publish(ctx, subject, payload)
+	if err != nil {
+		return fmt.Errorf("failed to publish to nats: %w", err)
+	}
+
+	return nil
 }
 
 func (n *Nats) listen() (err error) {
@@ -37,43 +56,16 @@ func (n *Nats) listen() (err error) {
 	defer n.broker.Unsubscribe(subscriber)
 
 	for event := range subscriber {
-		if n.js == nil || n.streamErr != nil {
-			logrus.Warn("nats: jetstream not initialized, writing event to disk")
-			err := n.writeEventToDisk(event)
-			if err != nil {
-				logrus.Errorf("nats: failed to write event to disk: %s", err)
-			}
+		data, marshalErr := proto.Marshal(event)
+		if marshalErr != nil {
+			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
 			continue
 		}
 
-		err := n.publishEvent(event)
+		err := n.pqueue.Add("events", getEventType(event), data)
 		if err != nil {
-			logrus.Errorf("nats: %s", err)
-			// Write to file on disk
-			err := n.writeEventToDisk(event)
-			if err != nil {
-				logrus.Errorf("nats: failed to write event to disk: %s", err)
-			}
+			logrus.Errorf("nats: failed to add event to persistent queue: %s", err)
 		}
-	}
-
-	return nil
-}
-
-func (n *Nats) publishEvent(event *protobuf.Event) error {
-	if n.js == nil || n.streamErr != nil {
-		return fmt.Errorf("jetstream not initialized")
-	}
-
-	data, err := proto.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("failed to marshal event: %w", err)
-	}
-
-	subject := getEventType(event)
-	_, err = n.js.Publish(context.Background(), subject, data)
-	if err != nil {
-		return fmt.Errorf("failed to publish event: %w", err)
 	}
 
 	return nil
@@ -112,116 +104,6 @@ func getEventType(event *protobuf.Event) string {
 	default:
 		return "events"
 	}
-}
-
-func (n *Nats) writeEventToDisk(event *protobuf.Event) error {
-	data, err := proto.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("failed to marshal event: %w", err)
-	}
-
-	filename := "/tmp/comin-events.protobuf"
-
-	n.fileMu.Lock()
-	defer n.fileMu.Unlock()
-
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
-	}
-	defer f.Close()
-
-	if _, err := f.Write(data); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
-	}
-
-	n.pendingCount++
-	logrus.Infof("nats: appended event to disk: %s (pending: %d)", filename, n.pendingCount)
-	return nil
-}
-
-func (n *Nats) purgeEventsFile() error {
-	filename := "/tmp/comin-events.protobuf"
-
-	// TODO: when the file is huge, this could lock the mutex for
-	// too long. We should find a way to reduce the lock time.
-	n.fileMu.Lock()
-	defer n.fileMu.Unlock()
-
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to read file: %w", err)
-	}
-
-	if len(data) == 0 {
-		return nil
-	}
-
-	var remainingEvents []*protobuf.Event
-	count := 0
-	buf := data
-	for len(buf) > 0 {
-		var event protobuf.Event
-		err := proto.Unmarshal(buf, &event)
-		if err != nil {
-			logrus.Errorf("nats: failed to unmarshal event from file: %s", err)
-			break
-		}
-
-		eventData, marshalErr := proto.Marshal(&event)
-		if marshalErr != nil {
-			logrus.Errorf("nats: failed to marshal event: %s", marshalErr)
-			// Keep the event in the file since we couldn't process it
-			remainingEvents = append(remainingEvents, &event)
-			buf = buf[len(eventData):]
-			event.Reset()
-			continue
-		}
-
-		err = n.publishEvent(&event)
-		if err != nil {
-			logrus.Errorf("nats: %s", err)
-			// Keep the event in the file since we couldn't publish it
-			remainingEvents = append(remainingEvents, &event)
-		} else {
-			count++
-		}
-
-		buf = buf[len(eventData):]
-		event.Reset()
-	}
-
-	// Write back any events that failed to publish
-	if len(remainingEvents) > 0 {
-		var remainingData []byte
-		for _, e := range remainingEvents {
-			data, marshalErr := proto.Marshal(e)
-			if marshalErr != nil {
-				logrus.Errorf("nats: failed to marshal remaining event: %s", marshalErr)
-				continue
-			}
-			remainingData = append(remainingData, data...)
-		}
-		err = os.WriteFile(filename, remainingData, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to write remaining events to file: %w", err)
-		}
-		n.pendingCount = len(remainingEvents)
-		logrus.Infof("nats: purged %d events from file, %d remaining: %s", count, len(remainingEvents), filename)
-	} else {
-		// Empty the file
-		err = os.WriteFile(filename, []byte{}, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to empty file: %w", err)
-		}
-		n.pendingCount = 0
-		logrus.Infof("nats: purged %d events from file: %s", count, filename)
-	}
-
-	return nil
 }
 
 func (n *Nats) Start() (err error) {
@@ -277,10 +159,6 @@ func (n *Nats) Start() (err error) {
 				n.streamErr = nil
 				_ = stream
 			}
-			err = n.purgeEventsFile()
-			if err != nil {
-				logrus.Errorf("nats: failed to purge events file: %s", err)
-			}
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
 			logrus.Info("nats: reconnection")
@@ -291,10 +169,6 @@ func (n *Nats) Start() (err error) {
 				return
 			}
 			n.js = js
-			err := n.purgeEventsFile()
-			if err != nil {
-				logrus.Errorf("nats: failed to purge events file on reconnect: %s", err)
-			}
 		}),
 		nats.ReconnectErrHandler(func(_ *nats.Conn, reconnectErr error) {
 			fmt.Printf("nats: reconnection failed: %s\n", reconnectErr)
