@@ -9,7 +9,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nlewo/comin/internal/broker"
 	"github.com/nlewo/comin/internal/manager"
-	"github.com/nlewo/comin/internal/protobuf"
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 )
@@ -45,7 +45,7 @@ func (n *Nats) pqueueWorker(ctx context.Context, stream, subject string, payload
 
 	_, err := n.js.Publish(ctx, subject, payload)
 	if err != nil {
-		return fmt.Errorf("failed to publish to nats: %w", err)
+		return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (n *Nats) Start() (err error) {
 				return
 			}
 			n.js = js
-			stream, err := js.Stream(ctx, "events")
+			_, err := js.Stream(ctx, "events")
 			if err != nil {
 				if err != jetstream.ErrStreamNotFound {
 					logrus.Errorf("nats: failed to get stream: %s", err)
@@ -161,11 +161,10 @@ func (n *Nats) Start() (err error) {
 				}
 			} else {
 				n.streamErr = nil
-				_ = stream
 			}
 
 			// Create or get the "fetched" stream
-			fetchedStream, err := js.Stream(ctx, "fetched")
+			_, err = js.Stream(ctx, "fetched")
 			if err != nil {
 				if err != jetstream.ErrStreamNotFound {
 					logrus.Errorf("nats: failed to get fetched stream: %s", err)
@@ -179,8 +178,6 @@ func (n *Nats) Start() (err error) {
 				if err != nil {
 					logrus.Errorf("nats: failed to create fetched stream: %s", err)
 				}
-			} else {
-				_ = fetchedStream
 			}
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
@@ -192,9 +189,33 @@ func (n *Nats) Start() (err error) {
 				return
 			}
 			n.js = js
-			// Ensure fetched stream exists on reconnect
+			// Ensure streams exist on reconnect
 			ctx := context.Background()
-			_, err := js.Stream(ctx, "fetched")
+			_, err := js.Stream(ctx, "events")
+			if err != nil && err == jetstream.ErrStreamNotFound {
+				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
+					Name: "events",
+					Subjects: []string{
+						"eval.started",
+						"eval.finished",
+						"build.started",
+						"build.finished",
+						"confirmation.submitted",
+						"confirmation.cancelled",
+						"confirmation.confirmed",
+						"resume",
+						"suspend",
+						"deployment.started",
+						"deployment.finished",
+						"reboot.required",
+						"manager.state",
+					},
+				})
+				if err != nil {
+					logrus.Errorf("nats: failed to create events stream on reconnect: %s", err)
+				}
+			}
+			_, err = js.Stream(ctx, "fetched")
 			if err != nil && err == jetstream.ErrStreamNotFound {
 				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
 					Name:     "fetched",
