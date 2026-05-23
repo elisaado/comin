@@ -39,15 +39,18 @@ func New(m *manager.Manager, b *broker.Broker) *Nats {
 }
 
 func (n *Nats) pqueueWorker(ctx context.Context, stream, subject string, payload []byte) error {
-	if n.js == nil || n.streamErr != nil {
-		return fmt.Errorf("jetstream not initialized")
+	switch subject {
+	case "fetched":
+		_, err := n.jsFetched.Publish(ctx, subject, payload)
+		if err != nil {
+			return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
+		}
+	default:
+		_, err := n.jsEvents.Publish(ctx, subject, payload)
+		if err != nil {
+			return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
+		}
 	}
-
-	_, err := n.js.Publish(ctx, subject, payload)
-	if err != nil {
-		return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
-	}
-
 	return nil
 }
 
@@ -111,6 +114,56 @@ func getEventType(event *protobuf.Event) string {
 	}
 }
 
+func (n *Nats) ensureStreams(ctx context.Context, jsEvents jetstream.JetStream, jsFetched jetstream.JetStream) {
+	// Ensure events stream exists
+	_, err := jsEvents.Stream(ctx, "events")
+	if err != nil {
+		if err != jetstream.ErrStreamNotFound {
+			logrus.Errorf("nats: failed to get events stream: %s", err)
+			return
+		}
+		// Stream doesn't exist, create it
+		_, err := jsEvents.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
+			Name: "events",
+			Subjects: []string{
+				"eval.started",
+				"eval.finished",
+				"build.started",
+				"build.finished",
+				"confirmation.submitted",
+				"confirmation.cancelled",
+				"confirmation.confirmed",
+				"resume",
+				"suspend",
+				"deployment.started",
+				"deployment.finished",
+				"reboot.required",
+				"manager.state",
+			},
+		})
+		if err != nil {
+			logrus.Errorf("nats: failed to create events stream: %s", err)
+		}
+	}
+
+	// Ensure fetched stream exists
+	_, err = jsFetched.Stream(ctx, "fetched")
+	if err != nil {
+		if err != jetstream.ErrStreamNotFound {
+			logrus.Errorf("nats: failed to get fetched stream: %s", err)
+			return
+		}
+		// Stream doesn't exist, create it
+		_, err = jsFetched.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
+			Name:     "fetched",
+			Subjects: []string{"fetched"},
+		})
+		if err != nil {
+			logrus.Errorf("nats: failed to create fetched stream: %s", err)
+		}
+	}
+}
+
 func (n *Nats) Start() (err error) {
 	logrus.Info("nats: starting the client and listening to the event stream")
 	go n.listen()
@@ -123,108 +176,32 @@ func (n *Nats) Start() (err error) {
 		nats.ConnectHandler(func(c *nats.Conn) {
 			logrus.Info("nats: initial connection")
 			ctx := context.Background()
-			js, jsErr := jetstream.New(c)
-			if jsErr != nil {
-				logrus.Errorf("nats: failed to create jetstream: %s", jsErr)
-				n.streamErr = jsErr
+			n.jsEvents, err = jetstream.New(c)
+			if err != nil {
+				logrus.Errorf("nats: failed to create jetstream: %s", err)
 				return
 			}
-			n.js = js
-			_, err := js.Stream(ctx, "events")
+			n.jsFetched, err = jetstream.New(c)
 			if err != nil {
-				if err != jetstream.ErrStreamNotFound {
-					logrus.Errorf("nats: failed to get stream: %s", err)
-					n.streamErr = err
-					return
-				}
-				// Stream doesn't exist, create it
-				_, n.streamErr = js.CreateStream(ctx, jetstream.StreamConfig{
-					Name: "events",
-					Subjects: []string{
-						"eval.started",
-						"eval.finished",
-						"build.started",
-						"build.finished",
-						"confirmation.submitted",
-						"confirmation.cancelled",
-						"confirmation.confirmed",
-						"resume",
-						"suspend",
-						"deployment.started",
-						"deployment.finished",
-						"reboot.required",
-						"manager.state",
-					},
-				})
-				if n.streamErr != nil {
-					logrus.Errorf("nats: failed to create stream: %s", n.streamErr)
-				}
-			} else {
-				n.streamErr = nil
+				logrus.Errorf("nats: failed to create jetstream: %s", err)
+				return
 			}
-
-			// Create or get the "fetched" stream
-			_, err = js.Stream(ctx, "fetched")
-			if err != nil {
-				if err != jetstream.ErrStreamNotFound {
-					logrus.Errorf("nats: failed to get fetched stream: %s", err)
-					return
-				}
-				// Stream doesn't exist, create it
-				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
-					Name:     "fetched",
-					Subjects: []string{"fetched"},
-				})
-				if err != nil {
-					logrus.Errorf("nats: failed to create fetched stream: %s", err)
-				}
-			}
+			n.ensureStreams(ctx, n.jsEvents, n.jsFetched)
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
 			logrus.Info("nats: reconnection")
-			js, jsErr := jetstream.New(c)
-			if jsErr != nil {
-				logrus.Errorf("nats: failed to recreate jetstream on reconnect: %s", jsErr)
-				n.streamErr = jsErr
+			ctx := context.Background()
+			n.jsEvents, err = jetstream.New(c)
+			if err != nil {
+				logrus.Errorf("nats: failed to create jetstream: %s", err)
 				return
 			}
-			n.js = js
-			// Ensure streams exist on reconnect
-			ctx := context.Background()
-			_, err := js.Stream(ctx, "events")
-			if err != nil && err == jetstream.ErrStreamNotFound {
-				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
-					Name: "events",
-					Subjects: []string{
-						"eval.started",
-						"eval.finished",
-						"build.started",
-						"build.finished",
-						"confirmation.submitted",
-						"confirmation.cancelled",
-						"confirmation.confirmed",
-						"resume",
-						"suspend",
-						"deployment.started",
-						"deployment.finished",
-						"reboot.required",
-						"manager.state",
-					},
-				})
-				if err != nil {
-					logrus.Errorf("nats: failed to create events stream on reconnect: %s", err)
-				}
+			n.jsFetched, err = jetstream.New(c)
+			if err != nil {
+				logrus.Errorf("nats: failed to create jetstream: %s", err)
+				return
 			}
-			_, err = js.Stream(ctx, "fetched")
-			if err != nil && err == jetstream.ErrStreamNotFound {
-				_, err = js.CreateStream(ctx, jetstream.StreamConfig{
-					Name:     "fetched",
-					Subjects: []string{"fetched"},
-				})
-				if err != nil {
-					logrus.Errorf("nats: failed to create fetched stream on reconnect: %s", err)
-				}
-			}
+			n.ensureStreams(ctx, n.jsEvents, n.jsFetched)
 		}),
 		nats.ReconnectErrHandler(func(_ *nats.Conn, reconnectErr error) {
 			fmt.Printf("nats: reconnection failed: %s\n", reconnectErr)
