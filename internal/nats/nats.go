@@ -17,8 +17,8 @@ import (
 type Nats struct {
 	manager   *manager.Manager
 	broker    *broker.Broker
-	js        jetstream.JetStream
-	streamErr error
+	jsEvents  jetstream.JetStream
+	jsFetched jetstream.JetStream
 	pqueue    *PersistentQueue
 }
 
