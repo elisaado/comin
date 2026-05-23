@@ -3,6 +3,7 @@ package nats
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -39,14 +40,15 @@ func New(m *manager.Manager, b *broker.Broker) *Nats {
 }
 
 func (n *Nats) pqueueWorker(ctx context.Context, stream, subject string, payload []byte) error {
+	enrichedSubject := n.manager.Hostname + "." + subject
 	switch subject {
 	case "fetched":
-		_, err := n.jsFetched.Publish(ctx, subject, payload)
+		_, err := n.jsFetched.Publish(ctx, enrichedSubject, payload)
 		if err != nil {
 			return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
 		}
 	default:
-		_, err := n.jsEvents.Publish(ctx, subject, payload)
+		_, err := n.jsEvents.Publish(ctx, enrichedSubject, payload)
 		if err != nil {
 			return fmt.Errorf("failed to publish to stream %s: %w", stream, err)
 		}
@@ -115,6 +117,7 @@ func getEventType(event *protobuf.Event) string {
 }
 
 func (n *Nats) ensureStreams(ctx context.Context, jsEvents jetstream.JetStream, jsFetched jetstream.JetStream) {
+	hostname := n.manager.Hostname
 	// Ensure events stream exists
 	_, err := jsEvents.Stream(ctx, "events")
 	if err != nil {
@@ -126,19 +129,19 @@ func (n *Nats) ensureStreams(ctx context.Context, jsEvents jetstream.JetStream, 
 		_, err := jsEvents.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
 			Name: "events",
 			Subjects: []string{
-				"eval.started",
-				"eval.finished",
-				"build.started",
-				"build.finished",
-				"confirmation.submitted",
-				"confirmation.cancelled",
-				"confirmation.confirmed",
-				"resume",
-				"suspend",
-				"deployment.started",
-				"deployment.finished",
-				"reboot.required",
-				"manager.state",
+				hostname + ".eval.started",
+				hostname + ".eval.finished",
+				hostname + ".build.started",
+				hostname + ".build.finished",
+				hostname + ".confirmation.submitted",
+				hostname + ".confirmation.cancelled",
+				hostname + ".confirmation.confirmed",
+				hostname + ".resume",
+				hostname + ".suspend",
+				hostname + ".deployment.started",
+				hostname + ".deployment.finished",
+				hostname + ".reboot.required",
+				hostname + ".manager.state",
 			},
 		})
 		if err != nil {
@@ -156,7 +159,7 @@ func (n *Nats) ensureStreams(ctx context.Context, jsEvents jetstream.JetStream, 
 		// Stream doesn't exist, create it
 		_, err = jsFetched.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
 			Name:     "fetched",
-			Subjects: []string{"fetched"},
+			Subjects: []string{hostname + ".fetched"},
 		})
 		if err != nil {
 			logrus.Errorf("nats: failed to create fetched stream: %s", err)
@@ -167,9 +170,10 @@ func (n *Nats) ensureStreams(ctx context.Context, jsEvents jetstream.JetStream, 
 func (n *Nats) Start() (err error) {
 	logrus.Info("nats: starting the client and listening to the event stream")
 	go n.listen()
-
-	nc, err := nats.Connect("nats://92.243.27.85:4222",
-		nats.Token("xg17i0WGrTHa0milW.qrA"),
+	natsUrl := os.Getenv("NATS_URL")
+	natsToken := os.Getenv("NATS_TOKEN")
+	nc, err := nats.Connect(natsUrl,
+		nats.Token(natsToken),
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
 		nats.ReconnectWait(2*time.Second),
