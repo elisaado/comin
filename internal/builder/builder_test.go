@@ -74,11 +74,13 @@ func TestBuilderBuild(t *testing.T) {
 	ctx := t.Context()
 
 	// Run the evaluator
-	_ = b.Eval(ctx, &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(ctx, &generation)
 	gUUID := <-b.EvaluationDone // The evaluation timeouts
 	assert.ErrorContains(t, b.build(ctx, gUUID), "the generation is not evaluated")
 
-	_ = b.Eval(ctx, &protobuf.RepositoryStatus{})
+	generation2 := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(ctx, &generation2)
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		assert.True(c, b.isEvaluating.Load())
 	}, 2*time.Second, 100*time.Millisecond)
@@ -135,7 +137,8 @@ func TestEval(t *testing.T) {
 	assert.Nil(t, err)
 	eMock := NewExecutorMock(false)
 	b := New(s, eMock, bk, "", "", "", "", false, 5*time.Second, 5*time.Second)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(t.Context(), &generation)
 	assert.True(t, b.isEvaluating.Load())
 	eMock.evalDone <- struct{}{}
 	gUUID := <-b.EvaluationDone
@@ -157,7 +160,8 @@ func TestEvalAlreadyBuilt(t *testing.T) {
 	assert.Nil(t, err)
 	eMock := NewExecutorMock(true)
 	b := New(s, eMock, bk, "", "", "", "", false, 5*time.Second, 5*time.Second)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(t.Context(), &generation)
 	assert.True(t, b.IsEvaluating())
 
 	eMock.evalDone <- struct{}{}
@@ -181,14 +185,20 @@ func TestBuilderPreemption(t *testing.T) {
 	assert.Nil(t, err)
 	eMock := NewExecutorMock(false)
 	b := New(s, eMock, bk, "", "", "", "", false, 5*time.Second, 5*time.Second)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{SelectedCommitId: "commit-1"})
+	generation1 := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{SelectedCommitId: "commit-1"})
+	_ = b.Eval(t.Context(), &generation1)
 	assert.True(t, b.isEvaluating.Load())
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		g, _ := b.store.GenerationGet(b.GenerationUuid)
 		assert.Equal(c, "commit-1", g.SelectedCommitId)
 	}, 2*time.Second, 100*time.Millisecond)
 
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{SelectedCommitId: "commit-2"})
+	// Wait for the first evaluation to finish to avoid GC removing generation2
+	eMock.evalDone <- struct{}{}
+	<-b.EvaluationDone
+
+	generation2 := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{SelectedCommitId: "commit-2"})
+	_ = b.Eval(t.Context(), &generation2)
 	assert.True(t, b.isEvaluating.Load())
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		g, _ := b.store.GenerationGet(b.GenerationUuid)
@@ -204,7 +214,8 @@ func TestBuilderStop(t *testing.T) {
 	assert.Nil(t, err)
 	eMock := NewExecutorMock(false)
 	b := New(s, eMock, bk, "", "", "", "", false, 5*time.Second, 5*time.Second)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(t.Context(), &generation)
 	assert.True(t, b.isEvaluating.Load())
 	b.Stop()
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -222,7 +233,8 @@ func TestBuilderTimeout(t *testing.T) {
 	assert.Nil(t, err)
 	eMock := NewExecutorMock(false)
 	b := New(s, eMock, bk, "", "", "", "", false, 1*time.Second, 5*time.Second)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(t.Context(), &generation)
 	assert.True(t, b.isEvaluating.Load())
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		g, _ := b.store.GenerationGet(b.GenerationUuid)
@@ -241,7 +253,8 @@ func TestBuilderSuspend(t *testing.T) {
 	b := New(s, eMock, bk, "", "", "", "", false, 1*time.Second, 5*time.Second)
 	_ = b.Suspend()
 	assert.True(t, b.isSuspended)
-	_ = b.Eval(t.Context(), &protobuf.RepositoryStatus{})
+	generation := s.NewGeneration("", "", "", "", &protobuf.RepositoryStatus{})
+	_ = b.Eval(t.Context(), &generation)
 	assert.True(t, b.isEvaluating.Load())
 
 	eMock.evalDone <- struct{}{}
