@@ -426,9 +426,8 @@ func (x *ConfirmRequest) GetFor() string {
 type Generation struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
 	Uuid                    string                 `protobuf:"bytes,1,opt,name=uuid" json:"uuid,omitempty"`
-	RepositoryPath          string                 `protobuf:"bytes,24,opt,name=repository_path,json=repositoryPath" json:"repository_path,omitempty"`
-	RepositorySubdir        string                 `protobuf:"bytes,25,opt,name=repository_subdir,json=repositorySubdir" json:"repository_subdir,omitempty"`
-	SystemAttr              string                 `protobuf:"bytes,26,opt,name=system_attr,json=systemAttr" json:"system_attr,omitempty"`
+	RepositorySubdir        string                 `protobuf:"bytes,24,opt,name=repository_subdir,json=repositorySubdir" json:"repository_subdir,omitempty"`
+	SystemAttr              string                 `protobuf:"bytes,25,opt,name=system_attr,json=systemAttr" json:"system_attr,omitempty"`
 	Hostname                string                 `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
 	SelectedRemoteUrl       string                 `protobuf:"bytes,4,opt,name=selected_remote_url,json=selectedRemoteUrl" json:"selected_remote_url,omitempty"`
 	SelectedRemoteName      string                 `protobuf:"bytes,5,opt,name=selected_remote_name,json=selectedRemoteName" json:"selected_remote_name,omitempty"`
@@ -488,13 +487,6 @@ func (*Generation) Descriptor() ([]byte, []int) {
 func (x *Generation) GetUuid() string {
 	if x != nil {
 		return x.Uuid
-	}
-	return ""
-}
-
-func (x *Generation) GetRepositoryPath() string {
-	if x != nil {
-		return x.RepositoryPath
 	}
 	return ""
 }
@@ -1015,6 +1007,7 @@ type Builder struct {
 	GenerationUuid string                 `protobuf:"bytes,4,opt,name=generation_uuid,json=generationUuid" json:"generation_uuid,omitempty"`
 	IsSuspended    *wrapperspb.BoolValue  `protobuf:"bytes,5,opt,name=is_suspended,json=isSuspended" json:"is_suspended,omitempty"`
 	Hostname       string                 `protobuf:"bytes,6,opt,name=hostname" json:"hostname,omitempty"`
+	RepositoryPath string                 `protobuf:"bytes,7,opt,name=repository_path,json=repositoryPath" json:"repository_path,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1087,6 +1080,13 @@ func (x *Builder) GetIsSuspended() *wrapperspb.BoolValue {
 func (x *Builder) GetHostname() string {
 	if x != nil {
 		return x.Hostname
+	}
+	return ""
+}
+
+func (x *Builder) GetRepositoryPath() string {
+	if x != nil {
+		return x.RepositoryPath
 	}
 	return ""
 }
@@ -2652,13 +2652,12 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\x04Type\"J\n" +
 	"\x0eConfirmRequest\x12&\n" +
 	"\x0egenerationUuid\x18\x01 \x01(\tR\x0egenerationUuid\x12\x10\n" +
-	"\x03for\x18\x02 \x01(\tR\x03for\"\xf8\b\n" +
+	"\x03for\x18\x02 \x01(\tR\x03for\"\xcf\b\n" +
 	"\n" +
 	"Generation\x12\x12\n" +
-	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12'\n" +
-	"\x0frepository_path\x18\x18 \x01(\tR\x0erepositoryPath\x12+\n" +
-	"\x11repository_subdir\x18\x19 \x01(\tR\x10repositorySubdir\x12\x1f\n" +
-	"\vsystem_attr\x18\x1a \x01(\tR\n" +
+	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12+\n" +
+	"\x11repository_subdir\x18\x18 \x01(\tR\x10repositorySubdir\x12\x1f\n" +
+	"\vsystem_attr\x18\x19 \x01(\tR\n" +
 	"systemAttr\x12\x1a\n" +
 	"\bhostname\x18\x03 \x01(\tR\bhostname\x12.\n" +
 	"\x13selected_remote_url\x18\x04 \x01(\tR\x11selectedRemoteUrl\x120\n" +
@@ -2730,7 +2729,7 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\x14generation_to_deploy\x18\x03 \x01(\v2\x14.protobuf.GenerationR\x12generationToDeploy\x12\x1c\n" +
 	"\toperation\x18\x06 \x01(\tR\toperation\x12E\n" +
 	"\x13previous_deployment\x18\x04 \x01(\v2\x14.protobuf.DeploymentR\x12previousDeployment\x12=\n" +
-	"\fis_suspended\x18\x05 \x01(\v2\x1a.google.protobuf.BoolValueR\visSuspended\"\xc1\x02\n" +
+	"\fis_suspended\x18\x05 \x01(\v2\x1a.google.protobuf.BoolValueR\visSuspended\"\xea\x02\n" +
 	"\aBuilder\x12?\n" +
 	"\ris_evaluating\x18\x01 \x01(\v2\x1a.google.protobuf.BoolValueR\fisEvaluating\x12;\n" +
 	"\vis_building\x18\x02 \x01(\v2\x1a.google.protobuf.BoolValueR\n" +
@@ -2740,7 +2739,8 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"generation\x12'\n" +
 	"\x0fgeneration_uuid\x18\x04 \x01(\tR\x0egenerationUuid\x12=\n" +
 	"\fis_suspended\x18\x05 \x01(\v2\x1a.google.protobuf.BoolValueR\visSuspended\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostname\"\xad\x02\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x12'\n" +
+	"\x0frepository_path\x18\a \x01(\tR\x0erepositoryPath\"\xad\x02\n" +
 	"\tConfirmer\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\x03R\x04mode\x12\x1c\n" +
 	"\tsubmitted\x18\x02 \x01(\tR\tsubmitted\x12\x1c\n" +

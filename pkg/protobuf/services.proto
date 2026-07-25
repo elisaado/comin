@@ -117,9 +117,8 @@ message ConfirmRequest {
 message Generation {
   string uuid = 1;
 
-  string repository_path = 24;
-  string repository_subdir = 25;
-  string system_attr = 26;
+  string repository_subdir = 24;
+  string system_attr = 25;
   string hostname = 3;
 
   string selected_remote_url = 4;
@@ -196,6 +195,7 @@ message Builder {
   string generation_uuid = 4;
   google.protobuf.BoolValue is_suspended = 5;
   string hostname = 6;
+  string repository_path = 7;
 }
 
 message Confirmer {

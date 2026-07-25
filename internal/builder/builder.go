@@ -108,6 +108,7 @@ func (b *Builder) State() *protobuf.Builder {
 		Generation:     generation,
 		GenerationUuid: generationUUID,
 		IsSuspended:    wrapperspb.Bool(b.isSuspended),
+		RepositoryPath: b.repositoryPath,
 	}
 }
 
@@ -220,7 +221,7 @@ func (b *Builder) Eval(ctx context.Context, generation *protobuf.Generation) err
 
 	evaluator := &Evaluator{
 		hostname:        b.hostname,
-		repositoryPath:  generation.RepositoryPath,
+		repositoryPath:  b.repositoryPath,
 		repostorySubdir: generation.RepositorySubdir,
 		systemAttr:      generation.SystemAttr,
 		submodules:      b.submodules,

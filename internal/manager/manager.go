@@ -164,7 +164,7 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 			case rs := <-m.Fetcher.RepositoryStatusCh:
 				if !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue() {
 					logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
-					generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryPath(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)
+					generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)
 					err := m.Builder.Eval(ctx, &generation)
 					if err != nil {
 						logrus.Error(err)
