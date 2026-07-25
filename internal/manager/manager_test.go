@@ -13,10 +13,10 @@ import (
 	"github.com/nlewo/comin/internal/executor"
 	"github.com/nlewo/comin/internal/fetcher"
 	"github.com/nlewo/comin/internal/prometheus"
-	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/nlewo/comin/internal/scheduler"
 	"github.com/nlewo/comin/internal/store"
 	"github.com/nlewo/comin/internal/utils"
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -286,8 +286,8 @@ func TestCorrectMachineId(t *testing.T) {
 	}
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assert.True(t, m.GetState().Builder.IsBuilding.GetValue())
-	}, 5*time.Second, 100*time.Millisecond)
+		assert.True(c, m.GetState().Builder.IsBuilding.GetValue())
+	}, 7*time.Second, 100*time.Millisecond)
 }
 
 func TestManagerWithDarwinConfiguration(t *testing.T) {

@@ -8,29 +8,27 @@ import (
 	"time"
 
 	"github.com/nlewo/comin/internal/broker"
-	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/nlewo/comin/internal/repository"
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Fetcher struct {
-	isFetching         atomic.Bool
-	repositoryStatus   *protobuf.RepositoryStatus
-	mu                 sync.RWMutex
-	submitRemotes      chan []string
-	RepositoryStatusCh chan *protobuf.RepositoryStatus
-	repo               repository.Repository
-	broker             *broker.Broker
+	isFetching       atomic.Bool
+	repositoryStatus *protobuf.RepositoryStatus
+	mu               sync.RWMutex
+	submitRemotes    chan []string
+	repo             repository.Repository
+	broker           *broker.Broker
 }
 
 func NewFetcher(repo repository.Repository, broker *broker.Broker) *Fetcher {
 	f := &Fetcher{
-		repo:               repo,
-		broker:             broker,
-		submitRemotes:      make(chan []string),
-		RepositoryStatusCh: make(chan *protobuf.RepositoryStatus),
+		repo:          repo,
+		broker:        broker,
+		submitRemotes: make(chan []string),
 	}
 	f.repositoryStatus = repo.GetRepositoryStatus()
 	return f
@@ -75,13 +73,15 @@ func (f *Fetcher) Start(ctx context.Context) {
 				remotes = union(remotes, submittedRemotes)
 			case rs := <-workerRepositoryStatusCh:
 				f.isFetching.Store(false)
-				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{RepositoryStatus: rs}}, CreatedAt: timestamppb.New(time.Now().UTC())})
 				f.mu.Lock()
-				if rs.SelectedCommitId != f.repositoryStatus.SelectedCommitId || rs.SelectedBranchIsTesting.GetValue() != f.repositoryStatus.SelectedBranchIsTesting.GetValue() {
+				updated := rs.SelectedCommitId != f.repositoryStatus.SelectedCommitId ||
+					(rs.SelectedBranchIsTesting != nil &&
+						rs.SelectedBranchIsTesting.GetValue() != f.repositoryStatus.SelectedBranchIsTesting.GetValue())
+				if updated {
 					f.repositoryStatus = rs
-					f.RepositoryStatusCh <- rs
 				}
 				f.mu.Unlock()
+				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{RepositoryStatus: rs, Updated: updated}}, CreatedAt: timestamppb.New(time.Now().UTC())})
 			}
 			if !f.isFetching.Load() && len(remotes) != 0 {
 				f.isFetching.Store(true)

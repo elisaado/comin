@@ -158,19 +158,26 @@ func (m *Manager) Resume(ctx context.Context) error {
 // evaluates and builds the derivation. Once built, it pushes the
 // generation on a channel which is consumed by the deployer.
 func (m *Manager) FetchAndBuild(ctx context.Context) {
+	brokerEvents := m.broker.Subscribe()
 	go func() {
 		for {
 			select {
-			case rs := <-m.Fetcher.RepositoryStatusCh:
-				if !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue() {
-					logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
-					generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)
-					err := m.Builder.Eval(ctx, &generation)
-					if err != nil {
-						logrus.Error(err)
+			case e := <-brokerEvents:
+				if fetched := e.GetFetched(); fetched != nil {
+					if !fetched.Updated {
+						continue
 					}
-				} else {
-					logrus.Infof("manager: the commit %s is not evaluated because it is not signed", rs.SelectedCommitId)
+					rs := fetched.RepositoryStatus
+					if !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue() {
+						logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
+						generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)
+						err := m.Builder.Eval(ctx, &generation)
+						if err != nil {
+							logrus.Error(err)
+						}
+					} else {
+						logrus.Infof("manager: the commit %s is not evaluated because it is not signed", rs.SelectedCommitId)
+					}
 				}
 			case generationUUID := <-m.Builder.EvaluationDone:
 				generation, err := m.storage.GenerationGet(generationUUID)

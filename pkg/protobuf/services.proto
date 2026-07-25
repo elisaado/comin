@@ -68,6 +68,7 @@ message Event {
   }
   message Fetched {
     RepositoryStatus repositoryStatus = 1;
+    bool updated = 2;
   }
   message Log {
     string object_type = 4;
