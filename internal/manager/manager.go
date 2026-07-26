@@ -53,7 +53,8 @@ type Manager struct {
 
 	isSuspended bool
 
-	broker *broker.Broker
+	broker       *broker.Broker
+	brokerEvents chan *protobuf.Event
 }
 
 func New(s *store.Store,
@@ -88,6 +89,7 @@ func New(s *store.Store,
 		DeployConfirmer:         deployConfirmer,
 		broker:                  broker,
 		configurationOperations: configurationOperations,
+		brokerEvents:           broker.Subscribe(),
 	}
 	return m
 }
@@ -158,11 +160,10 @@ func (m *Manager) Resume(ctx context.Context) error {
 // evaluates and builds the derivation. Once built, it pushes the
 // generation on a channel which is consumed by the deployer.
 func (m *Manager) FetchAndBuild(ctx context.Context) {
-	brokerEvents := m.broker.Subscribe()
 	go func() {
 		for {
 			select {
-			case e := <-brokerEvents:
+			case e := <-m.brokerEvents:
 				if fetched := e.GetFetched(); fetched != nil {
 					if !fetched.Updated {
 						continue
