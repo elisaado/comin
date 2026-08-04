@@ -2289,6 +2289,7 @@ type Event_Fetched struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RepositoryStatus *RepositoryStatus      `protobuf:"bytes,1,opt,name=repositoryStatus" json:"repositoryStatus,omitempty"`
 	Updated          bool                   `protobuf:"varint,2,opt,name=updated" json:"updated,omitempty"`
+	Verified         bool                   `protobuf:"varint,3,opt,name=verified" json:"verified,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -2333,6 +2334,13 @@ func (x *Event_Fetched) GetRepositoryStatus() *RepositoryStatus {
 func (x *Event_Fetched) GetUpdated() bool {
 	if x != nil {
 		return x.Updated
+	}
+	return false
+}
+
+func (x *Event_Fetched) GetVerified() bool {
+	if x != nil {
+		return x.Verified
 	}
 	return false
 }
@@ -2582,7 +2590,7 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\n" +
 	"\x1bpkg/protobuf/services.proto\x12\bprotobuf\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\"<\n" +
 	"\tOperation\x12/\n" +
-	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xc5\x12\n" +
+	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xe2\x12\n" +
 	"\x05Event\x12G\n" +
 	"\x0fevalStartedType\x18\x01 \x01(\v2\x1b.protobuf.Event.EvalStartedH\x00R\x0fevalStartedType\x12J\n" +
 	"\x10evalFinishedType\x18\x02 \x01(\v2\x1c.protobuf.Event.EvalFinishedH\x00R\x10evalFinishedType\x12J\n" +
@@ -2640,10 +2648,11 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x14.protobuf.DeploymentR\n" +
 	"deployment\x1a5\n" +
 	"\fManagerState\x12%\n" +
-	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1ak\n" +
+	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1a\x87\x01\n" +
 	"\aFetched\x12F\n" +
 	"\x10repositoryStatus\x18\x01 \x01(\v2\x1a.protobuf.RepositoryStatusR\x10repositoryStatus\x12\x18\n" +
-	"\aupdated\x18\x02 \x01(\bR\aupdated\x1a\xa5\x02\n" +
+	"\aupdated\x18\x02 \x01(\bR\aupdated\x12\x1a\n" +
+	"\bverified\x18\x03 \x01(\bR\bverified\x1a\xa5\x02\n" +
 	"\x03Log\x12\x1f\n" +
 	"\vobject_type\x18\x04 \x01(\tR\n" +
 	"objectType\x12\x1f\n" +

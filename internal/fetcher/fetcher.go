@@ -81,7 +81,9 @@ func (f *Fetcher) Start(ctx context.Context) {
 					f.repositoryStatus = rs
 				}
 				f.mu.Unlock()
-				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{RepositoryStatus: rs, Updated: updated}}, CreatedAt: timestamppb.New(time.Now().UTC())})
+				// Check if the commit is verified (signed when it should be)
+				verified := !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue()
+				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{RepositoryStatus: rs, Updated: updated, Verified: verified}}, CreatedAt: timestamppb.New(time.Now().UTC())})
 			}
 			if !f.isFetching.Load() && len(remotes) != 0 {
 				f.isFetching.Store(true)

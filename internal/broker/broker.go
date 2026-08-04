@@ -12,16 +12,16 @@ import (
 )
 
 type Broker struct {
-	stopCh     chan struct{}
-	publishCh  chan *protobuf.Event
+	stopCh      chan struct{}
+	publishCh   chan *protobuf.Event
 	subscribers map[chan *protobuf.Event]struct{}
 	mu          sync.RWMutex
 }
 
 func New() *Broker {
 	return &Broker{
-		stopCh:     make(chan struct{}),
-		publishCh:  make(chan *protobuf.Event, 1),
+		stopCh:      make(chan struct{}),
+		publishCh:   make(chan *protobuf.Event, 1),
 		subscribers: make(map[chan *protobuf.Event]struct{}),
 	}
 }
