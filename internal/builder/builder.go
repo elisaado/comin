@@ -222,11 +222,11 @@ func (b *Builder) Eval(ctx context.Context, generation *protobuf.Generation) err
 	evaluator := &Evaluator{
 		hostname:        b.hostname,
 		repositoryPath:  b.repositoryPath,
-		repostorySubdir: generation.RepositorySubdir,
-		systemAttr:      generation.SystemAttr,
+		repostorySubdir: generation.Source.GetGit().RepositorySubdir,
+		systemAttr:      generation.Source.GetGit().SystemAttr,
 		submodules:      b.submodules,
 
-		commitId: generation.SelectedCommitId,
+		commitId: generation.Source.GetGit().SelectedCommitId,
 		evalFunc: b.executor.Eval,
 		stdout:   stdout,
 		stderr:   stderr,

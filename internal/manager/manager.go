@@ -119,7 +119,7 @@ func (m *Manager) DeploymentLatestSubmit(operation string) error {
 	}
 	// If no operation is provided, use default based on branch type
 	if operation == "" {
-		if latest.Generation.SelectedBranchIsTesting != nil && latest.Generation.SelectedBranchIsTesting.Value {
+		if latest.Generation.Source != nil && latest.Generation.Source.GetGit() != nil && latest.Generation.Source.GetGit().SelectedBranchIsTesting != nil && latest.Generation.Source.GetGit().SelectedBranchIsTesting.Value {
 			operation = "test"
 		} else {
 			operation = "switch"
@@ -205,8 +205,9 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 					continue
 				}
 				if generation.BuildErr == "" {
-					logrus.Infof("manager: a generation is available for deployment with commit %s", generation.SelectedCommitId)
-					operation := m.getOperationFromConfigurationOperations(generation.SelectedRemoteName, generation.SelectedBranchName)
+					git := generation.Source.GetGit()
+					logrus.Infof("manager: a generation is available for deployment with commit %s", git.SelectedCommitId)
+					operation := m.getOperationFromConfigurationOperations(git.SelectedRemoteName, git.SelectedBranchName)
 					if !m.deployer.IsAlreadyDeployed(&generation, operation) {
 						m.DeployConfirmer.Submit(generationUUID)
 					}
@@ -219,7 +220,8 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 					logrus.Error(err)
 					continue
 				}
-				operation := m.getOperationFromConfigurationOperations(generation.SelectedRemoteName, generation.SelectedBranchName)
+				git := generation.Source.GetGit()
+				operation := m.getOperationFromConfigurationOperations(git.SelectedRemoteName, git.SelectedBranchName)
 				reason := fmt.Sprintf("The generation %s needs to be deployed", generationUUID)
 				m.deployer.Submit(&generation, operation, false, reason)
 			}

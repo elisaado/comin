@@ -92,21 +92,37 @@ func StringToBuildStatus(statusStr string) BuildStatus {
 }
 
 func (s *Store) NewGeneration(hostname, repositoryDir, systemAttr string, rs *protobuf.RepositoryStatus) (g protobuf.Generation) {
+	// Find the selected remote URL
+	selectedRemoteUrl := ""
+	for _, remote := range rs.Remotes {
+		if remote.Name == rs.SelectedRemoteName {
+			selectedRemoteUrl = remote.Url
+			break
+		}
+	}
+
 	g = protobuf.Generation{
-		Uuid:                    uuid.New().String(),
-		RepositorySubdir:        repositoryDir,
-		SystemAttr:              systemAttr,
-		Hostname:                hostname,
-		SelectedRemoteName:      rs.SelectedRemoteName,
-		SelectedBranchName:      rs.SelectedBranchName,
-		SelectedCommitId:        rs.SelectedCommitId,
-		SelectedCommitMsg:       rs.SelectedCommitMsg,
-		SelectedBranchIsTesting: rs.SelectedBranchIsTesting,
-		MainRemoteName:          rs.MainBranchName,
-		MainBranchName:          rs.MainBranchName,
-		MainCommitId:            rs.MainCommitId,
-		EvalStatus:              EvalInit.String(),
-		BuildStatus:             BuildInit.String(),
+		Uuid:   uuid.New().String(),
+		Source: &protobuf.Source{
+			Source: &protobuf.Source_Git{
+				Git: &protobuf.Git{
+					RepositorySubdir:        repositoryDir,
+					SystemAttr:              systemAttr,
+					Hostname:                hostname,
+					SelectedRemoteUrl:       selectedRemoteUrl,
+					SelectedRemoteName:      rs.SelectedRemoteName,
+					SelectedBranchName:      rs.SelectedBranchName,
+					SelectedCommitId:        rs.SelectedCommitId,
+					SelectedCommitMsg:       rs.SelectedCommitMsg,
+					SelectedBranchIsTesting: rs.SelectedBranchIsTesting,
+					MainCommitId:            rs.MainCommitId,
+					MainRemoteName:          rs.MainRemoteName,
+					MainBranchName:          rs.MainBranchName,
+				},
+			},
+		},
+		EvalStatus: EvalInit.String(),
+		BuildStatus: BuildInit.String(),
 	}
 	s.persisted.Generations = append(s.persisted.Generations, &g)
 	return
@@ -115,8 +131,11 @@ func (s *Store) NewGeneration(hostname, repositoryDir, systemAttr string, rs *pr
 func GenerationShow(g *protobuf.Generation) {
 	padding := "    "
 	fmt.Printf("%sGeneration UUID %s\n", padding, g.Uuid)
-	fmt.Printf("%sCommit ID %s from %s/%s\n", padding, g.SelectedCommitId, g.SelectedRemoteName, g.SelectedBranchName)
-	fmt.Printf("%sCommit message: %s\n", padding, strings.Trim(g.SelectedCommitMsg, "\n"))
+	if g.Source != nil && g.Source.GetGit() != nil {
+		git := g.Source.GetGit()
+		fmt.Printf("%sCommit ID %s from %s/%s\n", padding, git.SelectedCommitId, git.SelectedRemoteName, git.SelectedBranchName)
+		fmt.Printf("%sCommit message: %s\n", padding, strings.Trim(git.SelectedCommitMsg, "\n"))
+	}
 
 	if g.EvalStatus == EvalInit.String() {
 		fmt.Printf("%sNo evaluation started\n", padding)

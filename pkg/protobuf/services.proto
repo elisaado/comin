@@ -114,10 +114,33 @@ message ConfirmRequest {
   string for = 2;  // possible values: "build", "deploy", "all"
 }
 
-// We consider each created genration is legit to be deployed: hard
-// reset is ensured at RepositoryStatus creation.
+message Git {
+  string repository_subdir = 1;
+  string system_attr = 2;
+  string hostname = 3;
+
+  string selected_remote_url = 4;
+  string selected_remote_name = 5;
+  string selected_branch_name = 6;
+  string selected_commit_id = 7;
+  string selected_commit_msg = 8;
+  google.protobuf.BoolValue selected_branch_is_testing = 9;
+
+  string main_commit_id = 10;
+  string main_remote_name = 11;
+  string main_branch_name = 12;
+}
+
+message Source {
+  oneof source {
+    Git git = 1;
+  }
+}
+
 message Generation {
   string uuid = 1;
+
+  Source source = 28;
 
   string repository_subdir = 24;
   string system_attr = 25;

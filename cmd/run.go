@@ -24,6 +24,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// getGitFromGeneration is a helper function to safely extract Git source from a Generation
+func getGitFromGeneration(g *protobuf.Generation) *protobuf.Git {
+	if g != nil && g.Source != nil {
+		return g.Source.GetGit()
+	}
+	return &protobuf.Git{}
+}
+
 var configFilepath string
 
 var runCmd = &cobra.Command{
@@ -94,9 +102,10 @@ var runCmd = &cobra.Command{
 		var mainCommitId string
 		var lastDeployment *protobuf.Deployment
 		if ok, ld := store.LastDeployment(); ok {
-			mainCommitId = ld.Generation.MainCommitId
+			git := getGitFromGeneration(ld.Generation)
+			mainCommitId = git.MainCommitId
 			lastDeployment = ld
-			metrics.SetDeploymentInfo(ld.Generation.SelectedCommitId, ld.Status)
+			metrics.SetDeploymentInfo(git.SelectedCommitId, ld.Status)
 		}
 		repository, err := repository.New(gitConfig, mainCommitId, metrics)
 		if err != nil {

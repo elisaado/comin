@@ -190,7 +190,7 @@ func TestBuilderPreemption(t *testing.T) {
 	assert.True(t, b.isEvaluating.Load())
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		g, _ := b.store.GenerationGet(b.GenerationUuid)
-		assert.Equal(c, "commit-1", g.SelectedCommitId)
+		assert.Equal(c, "commit-1", g.Source.GetGit().SelectedCommitId)
 	}, 2*time.Second, 100*time.Millisecond)
 
 	// Wait for the first evaluation to finish to avoid GC removing generation2
@@ -202,7 +202,7 @@ func TestBuilderPreemption(t *testing.T) {
 	assert.True(t, b.isEvaluating.Load())
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		g, _ := b.store.GenerationGet(b.GenerationUuid)
-		assert.Equal(c, "commit-2", g.SelectedCommitId)
+		assert.Equal(c, "commit-2", g.Source.GetGit().SelectedCommitId)
 	}, 2*time.Second, 100*time.Millisecond)
 }
 

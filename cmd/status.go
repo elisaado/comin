@@ -76,27 +76,32 @@ func onelineStatus(status *pb.State) {
 		fmt.Printf(" ⏸️ ")
 	}
 	if status.Builder.Generation != nil && status.Builder.IsEvaluating.GetValue() {
-		fmt.Printf(" eval   %s/%s (%s)", status.Builder.Generation.SelectedRemoteName, status.Builder.Generation.SelectedBranchName,
+		git := getGitFromGeneration(status.Builder.Generation)
+		fmt.Printf(" eval   %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 			humanize.Time(status.Builder.Generation.EvalStartedAt.AsTime()))
 	} else if status.Builder.Generation != nil && status.Builder.IsBuilding.GetValue() {
-		fmt.Printf(" build  %s/%s (%s)", status.Builder.Generation.SelectedRemoteName, status.Builder.Generation.SelectedBranchName,
+		git := getGitFromGeneration(status.Builder.Generation)
+		fmt.Printf(" build  %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 			humanize.Time(status.Builder.Generation.BuildStartedAt.AsTime()))
 	} else if status.Builder.Generation != nil && status.Builder.Generation.EvalStatus == store.EvalFailed.String() {
-		fmt.Printf(" %s/%s (%s)", status.Builder.Generation.SelectedRemoteName, status.Builder.Generation.SelectedBranchName,
+		git := getGitFromGeneration(status.Builder.Generation)
+		fmt.Printf(" %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 			humanize.Time(status.Builder.Generation.EvalEndedAt.AsTime()))
 	} else if status.Builder.Generation != nil && status.Builder.Generation.BuildStatus == store.BuildFailed.String() {
-		fmt.Printf(" %s/%s (%s)", status.Builder.Generation.SelectedRemoteName, status.Builder.Generation.SelectedBranchName,
+		git := getGitFromGeneration(status.Builder.Generation)
+		fmt.Printf(" %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 			humanize.Time(status.Builder.Generation.BuildEndedAt.AsTime()))
 	} else if status.Deployer.Deployment != nil {
+		git := getGitFromGeneration(status.Deployer.Deployment.Generation)
 		switch status.Deployer.Deployment.Status {
 		case store.StatusToString(store.Running):
-			fmt.Printf(" deploy %s/%s (%s)", status.Deployer.Deployment.Generation.SelectedRemoteName, status.Deployer.Deployment.Generation.SelectedBranchName,
+			fmt.Printf(" deploy %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 				humanize.Time(status.Deployer.Deployment.EndedAt.AsTime()))
 		case store.StatusToString(store.Failed):
-			fmt.Printf(" %s/%s (%s)", status.Deployer.Deployment.Generation.SelectedRemoteName, status.Deployer.Deployment.Generation.SelectedBranchName,
+			fmt.Printf(" %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 				humanize.Time(status.Deployer.Deployment.EndedAt.AsTime()))
 		case store.StatusToString(store.Done):
-			fmt.Printf(" %s/%s (%s)", status.Deployer.Deployment.Generation.SelectedRemoteName, status.Deployer.Deployment.Generation.SelectedBranchName,
+			fmt.Printf(" %s/%s (%s)", git.SelectedRemoteName, git.SelectedBranchName,
 				humanize.Time(status.Deployer.Deployment.EndedAt.AsTime()))
 		}
 	}

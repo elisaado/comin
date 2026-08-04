@@ -12,15 +12,25 @@ import (
 )
 
 func envGitSha(d *pb.Deployment) string {
-	return d.Generation.SelectedCommitId
+	if d.Generation.Source != nil && d.Generation.Source.GetGit() != nil {
+		return d.Generation.Source.GetGit().SelectedCommitId
+	}
+	return ""
 }
 
 func envGitRef(d *pb.Deployment) string {
-	return fmt.Sprintf("%s/%s", d.Generation.SelectedRemoteName, d.Generation.SelectedBranchName)
+	if d.Generation.Source != nil && d.Generation.Source.GetGit() != nil {
+		git := d.Generation.Source.GetGit()
+		return fmt.Sprintf("%s/%s", git.SelectedRemoteName, git.SelectedBranchName)
+	}
+	return ""
 }
 
 func envGitMessage(d *pb.Deployment) string {
-	return strings.Trim(d.Generation.SelectedCommitMsg, "\n")
+	if d.Generation.Source != nil && d.Generation.Source.GetGit() != nil {
+		return strings.Trim(d.Generation.Source.GetGit().SelectedCommitMsg, "\n")
+	}
+	return ""
 }
 
 func envCominGeneration(d *pb.Deployment) string {
@@ -28,7 +38,10 @@ func envCominGeneration(d *pb.Deployment) string {
 }
 
 func envCominHostname(d *pb.Deployment) string {
-	return d.Generation.Hostname
+	if d.Generation.Source != nil && d.Generation.Source.GetGit() != nil {
+		return d.Generation.Source.GetGit().Hostname
+	}
+	return ""
 }
 
 func envCominStatus(d *pb.Deployment) string {

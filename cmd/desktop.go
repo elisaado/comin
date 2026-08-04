@@ -58,23 +58,31 @@ var desktopCmd = &cobra.Command{
 
 func scenario() {
 	g := protobuf.Generation{
-		BuildReason:        builder.BuildReasonNeedBuild,
-		SelectedRemoteName: "origin",
-		SelectedBranchName: "main",
+		BuildReason: builder.BuildReasonNeedBuild,
+		Source: &protobuf.Source{
+			Source: &protobuf.Source_Git{
+				Git: &protobuf.Git{
+					SelectedRemoteName: "origin",
+					SelectedBranchName: "main",
+				},
+			},
+		},
 	}
 	e := protobuf.Event{Type: &protobuf.Event_BuildStartedType{BuildStartedType: &protobuf.Event_BuildStarted{Generation: &g}}}
 	handler(&e) // nolint: errcheck
 	time.Sleep(time.Second)
 
 	d := protobuf.Deployment{
-		Status: store.StatusToString(store.Init),
+		Status:    store.StatusToString(store.Init),
+		Generation: &g,
 	}
 	e = protobuf.Event{Type: &protobuf.Event_DeploymentStartedType{DeploymentStartedType: &protobuf.Event_DeploymentStarted{Deployment: &d}}}
 	handler(&e) // nolint: errcheck
 	time.Sleep(time.Second)
 
 	d = protobuf.Deployment{
-		Status: store.StatusToString(store.Done),
+		Status:    store.StatusToString(store.Done),
+		Generation: &g,
 	}
 	e = protobuf.Event{Type: &protobuf.Event_DeploymentFinishedType{DeploymentFinishedType: &protobuf.Event_DeploymentFinished{Deployment: &d}}}
 	handler(&e) // nolint: errcheck
@@ -107,7 +115,8 @@ func handler(event *protobuf.Event) error {
 	case *protobuf.Event_BuildStartedType:
 		g := event.Type.(*protobuf.Event_BuildStartedType).BuildStartedType.Generation
 		if g.BuildReason == builder.BuildReasonNeedBuild {
-			message = fmt.Sprintf("A new commit from %s/%s is building.", g.SelectedRemoteName, g.SelectedBranchName)
+			git := getGitFromGeneration(g)
+			message = fmt.Sprintf("A new commit from %s/%s is building.", git.SelectedRemoteName, git.SelectedBranchName)
 		}
 	case *protobuf.Event_BuildFinishedType:
 		dpl := event.Type.(*protobuf.Event_BuildFinishedType).BuildFinishedType.Generation
