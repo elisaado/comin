@@ -140,22 +140,24 @@ message Source {
 message Generation {
   string uuid = 1;
 
-  Source source = 28;
+  Source source = 2;
 
-  string repository_subdir = 24;
-  string system_attr = 25;
-  string hostname = 3;
+  // Deprecated: These fields are kept for backward compatibility with existing store files.
+  // They will be migrated to the Source.git field on load.
+  string repository_subdir = 25 [deprecated = true];
+  string system_attr = 26 [deprecated = true];
+  string hostname = 3 [deprecated = true];
 
-  string selected_remote_url = 4;
-  string selected_remote_name = 5;
-  string selected_branch_name = 6;
-  string selected_commit_id = 7;
-  string selected_commit_msg = 8;
-  google.protobuf.BoolValue selected_branch_is_testing = 9;
+  string selected_remote_url = 4 [deprecated = true];
+  string selected_remote_name = 5 [deprecated = true];
+  string selected_branch_name = 6 [deprecated = true];
+  string selected_commit_id = 7 [deprecated = true];
+  string selected_commit_msg = 8 [deprecated = true];
+  google.protobuf.BoolValue selected_branch_is_testing = 9 [deprecated = true];
 
-  string main_commit_id = 10;
-  string main_remote_name = 11;
-  string main_branch_name = 12;
+  string main_commit_id = 10 [deprecated = true];
+  string main_remote_name = 11 [deprecated = true];
+  string main_branch_name = 12 [deprecated = true];
 
   string eval_status = 13;
   google.protobuf.Timestamp eval_started_at = 14;

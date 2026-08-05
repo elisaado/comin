@@ -620,35 +620,50 @@ type Source_Git struct {
 func (*Source_Git) isSource_Source() {}
 
 type Generation struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	Uuid                    string                 `protobuf:"bytes,1,opt,name=uuid" json:"uuid,omitempty"`
-	Source                  *Source                `protobuf:"bytes,28,opt,name=source" json:"source,omitempty"`
-	RepositorySubdir        string                 `protobuf:"bytes,24,opt,name=repository_subdir,json=repositorySubdir" json:"repository_subdir,omitempty"`
-	SystemAttr              string                 `protobuf:"bytes,25,opt,name=system_attr,json=systemAttr" json:"system_attr,omitempty"`
-	Hostname                string                 `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
-	SelectedRemoteUrl       string                 `protobuf:"bytes,4,opt,name=selected_remote_url,json=selectedRemoteUrl" json:"selected_remote_url,omitempty"`
-	SelectedRemoteName      string                 `protobuf:"bytes,5,opt,name=selected_remote_name,json=selectedRemoteName" json:"selected_remote_name,omitempty"`
-	SelectedBranchName      string                 `protobuf:"bytes,6,opt,name=selected_branch_name,json=selectedBranchName" json:"selected_branch_name,omitempty"`
-	SelectedCommitId        string                 `protobuf:"bytes,7,opt,name=selected_commit_id,json=selectedCommitId" json:"selected_commit_id,omitempty"`
-	SelectedCommitMsg       string                 `protobuf:"bytes,8,opt,name=selected_commit_msg,json=selectedCommitMsg" json:"selected_commit_msg,omitempty"`
-	SelectedBranchIsTesting *wrapperspb.BoolValue  `protobuf:"bytes,9,opt,name=selected_branch_is_testing,json=selectedBranchIsTesting" json:"selected_branch_is_testing,omitempty"`
-	MainCommitId            string                 `protobuf:"bytes,10,opt,name=main_commit_id,json=mainCommitId" json:"main_commit_id,omitempty"`
-	MainRemoteName          string                 `protobuf:"bytes,11,opt,name=main_remote_name,json=mainRemoteName" json:"main_remote_name,omitempty"`
-	MainBranchName          string                 `protobuf:"bytes,12,opt,name=main_branch_name,json=mainBranchName" json:"main_branch_name,omitempty"`
-	EvalStatus              string                 `protobuf:"bytes,13,opt,name=eval_status,json=evalStatus" json:"eval_status,omitempty"`
-	EvalStartedAt           *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=eval_started_at,json=evalStartedAt" json:"eval_started_at,omitempty"`
-	EvalEndedAt             *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=eval_ended_at,json=evalEndedAt" json:"eval_ended_at,omitempty"`
-	EvalErr                 string                 `protobuf:"bytes,16,opt,name=eval_err,json=evalErr" json:"eval_err,omitempty"`
-	OutPath                 string                 `protobuf:"bytes,17,opt,name=out_path,json=outPath" json:"out_path,omitempty"`
-	DrvPath                 string                 `protobuf:"bytes,18,opt,name=drv_path,json=drvPath" json:"drv_path,omitempty"`
-	MachineId               string                 `protobuf:"bytes,19,opt,name=machine_id,json=machineId" json:"machine_id,omitempty"`
-	BuildStatus             string                 `protobuf:"bytes,20,opt,name=build_status,json=buildStatus" json:"build_status,omitempty"`
-	BuildReason             string                 `protobuf:"bytes,27,opt,name=build_reason,json=buildReason" json:"build_reason,omitempty"`
-	BuildStartedAt          *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=build_started_at,json=buildStartedAt" json:"build_started_at,omitempty"`
-	BuildEndedAt            *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=build_ended_at,json=buildEndedAt" json:"build_ended_at,omitempty"`
-	BuildErr                string                 `protobuf:"bytes,23,opt,name=build_err,json=buildErr" json:"build_err,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Uuid   string                 `protobuf:"bytes,1,opt,name=uuid" json:"uuid,omitempty"`
+	Source *Source                `protobuf:"bytes,2,opt,name=source" json:"source,omitempty"`
+	// Deprecated: These fields are kept for backward compatibility with existing store files.
+	// They will be migrated to the Source.git field on load.
+	//
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	RepositorySubdir string `protobuf:"bytes,25,opt,name=repository_subdir,json=repositorySubdir" json:"repository_subdir,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SystemAttr string `protobuf:"bytes,26,opt,name=system_attr,json=systemAttr" json:"system_attr,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	Hostname string `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedRemoteUrl string `protobuf:"bytes,4,opt,name=selected_remote_url,json=selectedRemoteUrl" json:"selected_remote_url,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedRemoteName string `protobuf:"bytes,5,opt,name=selected_remote_name,json=selectedRemoteName" json:"selected_remote_name,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedBranchName string `protobuf:"bytes,6,opt,name=selected_branch_name,json=selectedBranchName" json:"selected_branch_name,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedCommitId string `protobuf:"bytes,7,opt,name=selected_commit_id,json=selectedCommitId" json:"selected_commit_id,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedCommitMsg string `protobuf:"bytes,8,opt,name=selected_commit_msg,json=selectedCommitMsg" json:"selected_commit_msg,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	SelectedBranchIsTesting *wrapperspb.BoolValue `protobuf:"bytes,9,opt,name=selected_branch_is_testing,json=selectedBranchIsTesting" json:"selected_branch_is_testing,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	MainCommitId string `protobuf:"bytes,10,opt,name=main_commit_id,json=mainCommitId" json:"main_commit_id,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	MainRemoteName string `protobuf:"bytes,11,opt,name=main_remote_name,json=mainRemoteName" json:"main_remote_name,omitempty"`
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	MainBranchName string                 `protobuf:"bytes,12,opt,name=main_branch_name,json=mainBranchName" json:"main_branch_name,omitempty"`
+	EvalStatus     string                 `protobuf:"bytes,13,opt,name=eval_status,json=evalStatus" json:"eval_status,omitempty"`
+	EvalStartedAt  *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=eval_started_at,json=evalStartedAt" json:"eval_started_at,omitempty"`
+	EvalEndedAt    *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=eval_ended_at,json=evalEndedAt" json:"eval_ended_at,omitempty"`
+	EvalErr        string                 `protobuf:"bytes,16,opt,name=eval_err,json=evalErr" json:"eval_err,omitempty"`
+	OutPath        string                 `protobuf:"bytes,17,opt,name=out_path,json=outPath" json:"out_path,omitempty"`
+	DrvPath        string                 `protobuf:"bytes,18,opt,name=drv_path,json=drvPath" json:"drv_path,omitempty"`
+	MachineId      string                 `protobuf:"bytes,19,opt,name=machine_id,json=machineId" json:"machine_id,omitempty"`
+	BuildStatus    string                 `protobuf:"bytes,20,opt,name=build_status,json=buildStatus" json:"build_status,omitempty"`
+	BuildReason    string                 `protobuf:"bytes,27,opt,name=build_reason,json=buildReason" json:"build_reason,omitempty"`
+	BuildStartedAt *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=build_started_at,json=buildStartedAt" json:"build_started_at,omitempty"`
+	BuildEndedAt   *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=build_ended_at,json=buildEndedAt" json:"build_ended_at,omitempty"`
+	BuildErr       string                 `protobuf:"bytes,23,opt,name=build_err,json=buildErr" json:"build_err,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Generation) Reset() {
@@ -695,6 +710,7 @@ func (x *Generation) GetSource() *Source {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetRepositorySubdir() string {
 	if x != nil {
 		return x.RepositorySubdir
@@ -702,6 +718,7 @@ func (x *Generation) GetRepositorySubdir() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSystemAttr() string {
 	if x != nil {
 		return x.SystemAttr
@@ -709,6 +726,7 @@ func (x *Generation) GetSystemAttr() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetHostname() string {
 	if x != nil {
 		return x.Hostname
@@ -716,6 +734,7 @@ func (x *Generation) GetHostname() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedRemoteUrl() string {
 	if x != nil {
 		return x.SelectedRemoteUrl
@@ -723,6 +742,7 @@ func (x *Generation) GetSelectedRemoteUrl() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedRemoteName() string {
 	if x != nil {
 		return x.SelectedRemoteName
@@ -730,6 +750,7 @@ func (x *Generation) GetSelectedRemoteName() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedBranchName() string {
 	if x != nil {
 		return x.SelectedBranchName
@@ -737,6 +758,7 @@ func (x *Generation) GetSelectedBranchName() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedCommitId() string {
 	if x != nil {
 		return x.SelectedCommitId
@@ -744,6 +766,7 @@ func (x *Generation) GetSelectedCommitId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedCommitMsg() string {
 	if x != nil {
 		return x.SelectedCommitMsg
@@ -751,6 +774,7 @@ func (x *Generation) GetSelectedCommitMsg() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetSelectedBranchIsTesting() *wrapperspb.BoolValue {
 	if x != nil {
 		return x.SelectedBranchIsTesting
@@ -758,6 +782,7 @@ func (x *Generation) GetSelectedBranchIsTesting() *wrapperspb.BoolValue {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetMainCommitId() string {
 	if x != nil {
 		return x.MainCommitId
@@ -765,6 +790,7 @@ func (x *Generation) GetMainCommitId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetMainRemoteName() string {
 	if x != nil {
 		return x.MainRemoteName
@@ -772,6 +798,7 @@ func (x *Generation) GetMainRemoteName() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
 func (x *Generation) GetMainBranchName() string {
 	if x != nil {
 		return x.MainBranchName
@@ -2892,25 +2919,25 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\x10main_branch_name\x18\f \x01(\tR\x0emainBranchName\"5\n" +
 	"\x06Source\x12!\n" +
 	"\x03git\x18\x01 \x01(\v2\r.protobuf.GitH\x00R\x03gitB\b\n" +
-	"\x06source\"\xf9\b\n" +
+	"\x06source\"\xa9\t\n" +
 	"\n" +
 	"Generation\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12(\n" +
-	"\x06source\x18\x1c \x01(\v2\x10.protobuf.SourceR\x06source\x12+\n" +
-	"\x11repository_subdir\x18\x18 \x01(\tR\x10repositorySubdir\x12\x1f\n" +
-	"\vsystem_attr\x18\x19 \x01(\tR\n" +
-	"systemAttr\x12\x1a\n" +
-	"\bhostname\x18\x03 \x01(\tR\bhostname\x12.\n" +
-	"\x13selected_remote_url\x18\x04 \x01(\tR\x11selectedRemoteUrl\x120\n" +
-	"\x14selected_remote_name\x18\x05 \x01(\tR\x12selectedRemoteName\x120\n" +
-	"\x14selected_branch_name\x18\x06 \x01(\tR\x12selectedBranchName\x12,\n" +
-	"\x12selected_commit_id\x18\a \x01(\tR\x10selectedCommitId\x12.\n" +
-	"\x13selected_commit_msg\x18\b \x01(\tR\x11selectedCommitMsg\x12W\n" +
-	"\x1aselected_branch_is_testing\x18\t \x01(\v2\x1a.google.protobuf.BoolValueR\x17selectedBranchIsTesting\x12$\n" +
+	"\x06source\x18\x02 \x01(\v2\x10.protobuf.SourceR\x06source\x12/\n" +
+	"\x11repository_subdir\x18\x19 \x01(\tB\x02\x18\x01R\x10repositorySubdir\x12#\n" +
+	"\vsystem_attr\x18\x1a \x01(\tB\x02\x18\x01R\n" +
+	"systemAttr\x12\x1e\n" +
+	"\bhostname\x18\x03 \x01(\tB\x02\x18\x01R\bhostname\x122\n" +
+	"\x13selected_remote_url\x18\x04 \x01(\tB\x02\x18\x01R\x11selectedRemoteUrl\x124\n" +
+	"\x14selected_remote_name\x18\x05 \x01(\tB\x02\x18\x01R\x12selectedRemoteName\x124\n" +
+	"\x14selected_branch_name\x18\x06 \x01(\tB\x02\x18\x01R\x12selectedBranchName\x120\n" +
+	"\x12selected_commit_id\x18\a \x01(\tB\x02\x18\x01R\x10selectedCommitId\x122\n" +
+	"\x13selected_commit_msg\x18\b \x01(\tB\x02\x18\x01R\x11selectedCommitMsg\x12[\n" +
+	"\x1aselected_branch_is_testing\x18\t \x01(\v2\x1a.google.protobuf.BoolValueB\x02\x18\x01R\x17selectedBranchIsTesting\x12(\n" +
 	"\x0emain_commit_id\x18\n" +
-	" \x01(\tR\fmainCommitId\x12(\n" +
-	"\x10main_remote_name\x18\v \x01(\tR\x0emainRemoteName\x12(\n" +
-	"\x10main_branch_name\x18\f \x01(\tR\x0emainBranchName\x12\x1f\n" +
+	" \x01(\tB\x02\x18\x01R\fmainCommitId\x12,\n" +
+	"\x10main_remote_name\x18\v \x01(\tB\x02\x18\x01R\x0emainRemoteName\x12,\n" +
+	"\x10main_branch_name\x18\f \x01(\tB\x02\x18\x01R\x0emainBranchName\x12\x1f\n" +
 	"\veval_status\x18\r \x01(\tR\n" +
 	"evalStatus\x12B\n" +
 	"\x0feval_started_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\revalStartedAt\x12>\n" +
