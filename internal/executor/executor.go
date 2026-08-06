@@ -2,13 +2,30 @@ package executor
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"runtime"
 
 	"github.com/sirupsen/logrus"
 )
 
 type EvalFunc func(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error)
 type BuildFunc func(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) error
+
+func New(repositoryType string) (e Executor, err error) {
+	switch repositoryType {
+	case "flake":
+		if runtime.GOOS == "darwin" {
+			return NewGitNixFlakeDarwin()
+		} else {
+			return NewGitNixFlakeNixOS()
+		}
+
+	case "nix":
+		return NewGitNixNixOS()
+	}
+	return e, fmt.Errorf("Failed to create the executor: %s", err)
+}
 
 // Executor contains the function used by comin to actually do actions
 // on the host. This allows us to abstract the way Nix expression are
@@ -26,19 +43,19 @@ type Executor interface {
 	IsStorePathExist(string) bool
 }
 
-func NewNixOSFlake() (e Executor, err error) {
+func NewGitNixFlakeNixOS() (e Executor, err error) {
 	logrus.Info("executor: creating a NixOS flake executor")
-	e, err = NewNixFlakeExecutor("nixosConfigurations")
+	e, err = NewGitNixFlake("nixosConfigurations")
 	return
 }
-func NewNixDarwinFlake() (e Executor, err error) {
+func NewGitNixFlakeDarwin() (e Executor, err error) {
 	logrus.Info("executor: creating a nix-darwin flake executor")
-	e, err = NewNixFlakeExecutor("darwinConfigurations")
+	e, err = NewGitNixFlake("darwinConfigurations")
 	return
 }
 
-func NewNixOSNix() (e Executor, err error) {
+func NewGitNixNixOS() (e Executor, err error) {
 	logrus.Info("executor: creating a NixOS executor")
-	e, err = NewNixExecutor()
+	e, err = NewGitNix()
 	return
 }

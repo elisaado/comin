@@ -13,25 +13,25 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type NixLocal struct{}
+type GitNix struct{}
 
-func NewNixExecutor() (*NixLocal, error) {
-	return &NixLocal{}, nil
+func NewGitNix() (*GitNix, error) {
+	return &GitNix{}, nil
 }
 
-func (n *NixLocal) ReadMachineId() (string, error) {
+func (n *GitNix) ReadMachineId() (string, error) {
 	return utils.ReadMachineIdLinux()
 }
 
-func (n *NixLocal) IsStorePathExist(storePath string) bool {
+func (n *GitNix) IsStorePathExist(storePath string) bool {
 	return isStorePathExist(storePath)
 }
 
-func (n *NixLocal) NeedToReboot(outPath, operation string) bool {
+func (n *GitNix) NeedToReboot(outPath, operation string) bool {
 	return utils.NeedToRebootLinux(outPath, operation)
 }
 
-func (n *NixLocal) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+func (n *GitNix) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
 	tempDir, err := cloneRepoToTemp(repositoryPath, commitId, submodules)
 	defer os.RemoveAll(tempDir) // nolint: errcheck
 	if err != nil {
@@ -42,11 +42,11 @@ func (n *NixLocal) Eval(ctx context.Context, repositoryPath, repositorySubdir, c
 	return showDerivationWithNix(ctx, nixDir, systemAttr, stdout, stderr)
 }
 
-func (n *NixLocal) Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error) {
+func (n *GitNix) Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error) {
 	return buildWithNix(ctx, drvPath, stdout, stdin)
 }
 
-func (n *NixLocal) Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error) {
+func (n *GitNix) Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error) {
 	return deployLinux(ctx, outPath, operation, profilePaths, stdout, stderr)
 }
 
@@ -69,8 +69,8 @@ func cloneRepoToTemp(remoteDir string, commitId string, submodules bool) (string
 		return "", fmt.Errorf("nix: failed to set reference 'archive' to '%s' in %s: %s", commitId, remoteDir, err)
 	}
 	cloneOpts := &git.CloneOptions{
-		URL: remoteDir,
-		NoCheckout: true,
+		URL:           remoteDir,
+		NoCheckout:    true,
 		ReferenceName: "refs/heads/archive",
 		SingleBranch:  true,
 	}

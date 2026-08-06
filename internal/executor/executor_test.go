@@ -10,7 +10,7 @@ import (
 
 func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with Darwin configuration
-	executor, err := NewNixFlakeExecutor("darwinConfigurations")
+	executor, err := NewGitNixFlake("darwinConfigurations")
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "darwinConfigurations", executor.systemAttr)
@@ -18,7 +18,7 @@ func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 
 func TestNixExecutorWithNixOSConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with NixOS configuration
-	executor, err := NewNixFlakeExecutor("nixosConfigurations")
+	executor, err := NewGitNixFlake("nixosConfigurations")
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "nixosConfigurations", executor.systemAttr)
@@ -53,7 +53,7 @@ func TestNixExecutorEval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -90,7 +90,7 @@ func TestNixExecutorShowDerivation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -122,7 +122,7 @@ func TestNixExecutorList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr)
 			assert.NoError(t, err)
 
 			// Test that List doesn't panic and handles configuration attribute correctly
@@ -155,7 +155,7 @@ func TestNixExecutorDeploy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr)
 			assert.NoError(t, err)
 
 			ctx := context.Background()

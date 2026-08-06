@@ -11,22 +11,22 @@ import (
 	"github.com/nlewo/comin/internal/utils"
 )
 
-type NixFlakeLocal struct {
+type GitNixFlake struct {
 	systemAttr string
 }
 
-func NewNixFlakeExecutor(systemAttr string) (*NixFlakeLocal, error) {
-	return &NixFlakeLocal{systemAttr: systemAttr}, nil
+func NewGitNixFlake(systemAttr string) (*GitNixFlake, error) {
+	return &GitNixFlake{systemAttr: systemAttr}, nil
 }
 
-func (n *NixFlakeLocal) ReadMachineId() (string, error) {
+func (n *GitNixFlake) ReadMachineId() (string, error) {
 	if n.systemAttr == "darwinConfigurations" {
 		return utils.ReadMachineIdDarwin()
 	}
 	return utils.ReadMachineIdLinux()
 }
 
-func (n *NixFlakeLocal) NeedToReboot(outPath, operation string) bool {
+func (n *GitNixFlake) NeedToReboot(outPath, operation string) bool {
 	if n.systemAttr == "darwinConfigurations" {
 		// TODO: Implement proper reboot detection for Darwin
 		// Unlike NixOS which has /run/current-system vs /run/booted-system paths,
@@ -38,15 +38,15 @@ func (n *NixFlakeLocal) NeedToReboot(outPath, operation string) bool {
 	return utils.NeedToRebootLinux(outPath, operation)
 }
 
-func (n *NixFlakeLocal) IsStorePathExist(storePath string) bool {
+func (n *GitNixFlake) IsStorePathExist(storePath string) bool {
 	return isStorePathExist(storePath)
 }
 
-func (n *NixFlakeLocal) ShowDerivation(ctx context.Context, flakeUrl, hostname string) (drvPath string, outPath string, err error) {
+func (n *GitNixFlake) ShowDerivation(ctx context.Context, flakeUrl, hostname string) (drvPath string, outPath string, err error) {
 	return showDerivationWithFlake(ctx, flakeUrl, hostname, n.systemAttr, os.Stdout, os.Stderr)
 }
 
-func (n *NixFlakeLocal) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+func (n *GitNixFlake) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
 	flakeUrl := fmt.Sprintf("git+file://%s?dir=%s&rev=%s", repositoryPath, repositorySubdir, commitId)
 	if submodules {
 		flakeUrl += "&submodules=1"
@@ -59,11 +59,11 @@ func (n *NixFlakeLocal) Eval(ctx context.Context, repositoryPath, repositorySubd
 	return
 }
 
-func (n *NixFlakeLocal) Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error) {
+func (n *GitNixFlake) Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error) {
 	return buildWithFlake(ctx, drvPath, stdout, stdin)
 }
 
-func (n *NixFlakeLocal) Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error) {
+func (n *GitNixFlake) Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error) {
 	return deploy(ctx, outPath, operation, n.systemAttr, profilePaths, stdout, stderr)
 }
 
@@ -89,7 +89,7 @@ type Show struct {
 	DarwinConfigurations map[string]struct{} `json:"darwinConfigurations"`
 }
 
-func (n *NixFlakeLocal) List(flakeUrl string) (hosts []string, err error) {
+func (n *GitNixFlake) List(flakeUrl string) (hosts []string, err error) {
 	args := []string{
 		"flake",
 		"show",

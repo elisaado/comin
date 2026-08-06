@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path"
-	"runtime"
 	"time"
 
 	brokerPkg "github.com/nlewo/comin/internal/broker"
@@ -62,18 +61,10 @@ var runCmd = &cobra.Command{
 		}
 
 		var executor executorPkg.Executor
-		switch cfg.RepositoryType {
-		case "flake":
-			executor, err = executorPkg.NewNixOSFlake()
-			if runtime.GOOS == "darwin" {
-				executor, err = executorPkg.NewNixDarwinFlake()
-			}
-		case "nix":
-			executor, err = executorPkg.NewNixOSNix()
-		}
+		executor, err = executorPkg.New(cfg.RepositoryType)
 		if err != nil {
-			logrus.Errorf("Failed to create the executor: %s", err)
-			return
+			logrus.Error(err)
+			os.Exit(1)
 		}
 
 		machineId, err := executor.ReadMachineId()
