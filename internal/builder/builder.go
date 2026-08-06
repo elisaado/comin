@@ -164,12 +164,9 @@ func (b *Builder) Stop() {
 }
 
 type Evaluator struct {
-	repositoryPath  string
-	repostorySubdir string
-	systemAttr      string
-	commitId        string
-	hostname        string
-	submodules      bool
+	repositoryPath string
+	source         *protobuf.Source
+	submodules     bool
 
 	evalFunc executor.EvalFunc
 
@@ -182,7 +179,7 @@ type Evaluator struct {
 }
 
 func (r *Evaluator) Run(ctx context.Context) (err error) {
-	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.repositoryPath, r.repostorySubdir, r.commitId, r.systemAttr, r.hostname, r.submodules, r.stdout, r.stderr)
+	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.repositoryPath, r.source, r.submodules, r.stdout, r.stderr)
 	return err
 }
 
@@ -220,16 +217,12 @@ func (b *Builder) Eval(ctx context.Context, generation *protobuf.Generation) err
 	stdout, stderr := b.broker.GetLogger("evaluation", generation.Uuid)
 
 	evaluator := &Evaluator{
-		hostname:        b.hostname,
-		repositoryPath:  b.repositoryPath,
-		repostorySubdir: generation.Source.GetGit().RepositorySubdir,
-		systemAttr:      generation.Source.GetGit().SystemAttr,
-		submodules:      b.submodules,
-
-		commitId: generation.Source.GetGit().SelectedCommitId,
-		evalFunc: b.executor.Eval,
-		stdout:   stdout,
-		stderr:   stderr,
+		repositoryPath: b.repositoryPath,
+		source:         generation.Source,
+		submodules:     b.submodules,
+		evalFunc:       b.executor.Eval,
+		stdout:         stdout,
+		stderr:         stderr,
 	}
 	b.evaluator = NewExec(evaluator, b.evalTimeout)
 

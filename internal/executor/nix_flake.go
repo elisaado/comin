@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/nlewo/comin/internal/utils"
+	"github.com/nlewo/comin/pkg/protobuf"
 )
 
 type GitNixFlake struct {
@@ -46,16 +47,20 @@ func (n *GitNixFlake) ShowDerivation(ctx context.Context, flakeUrl, hostname str
 	return showDerivationWithFlake(ctx, flakeUrl, hostname, n.systemAttr, os.Stdout, os.Stderr)
 }
 
-func (n *GitNixFlake) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
-	flakeUrl := fmt.Sprintf("git+file://%s?dir=%s&rev=%s", repositoryPath, repositorySubdir, commitId)
+func (n *GitNixFlake) Eval(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+	gitSource := source.GetGit()
+	if gitSource == nil {
+		return "", "", "", fmt.Errorf("expected Git source, got nil")
+	}
+	flakeUrl := fmt.Sprintf("git+file://%s?dir=%s&rev=%s", repositoryPath, gitSource.RepositorySubdir, gitSource.SelectedCommitId)
 	if submodules {
 		flakeUrl += "&submodules=1"
 	}
-	drvPath, outPath, err = showDerivationWithFlake(ctx, flakeUrl, hostname, n.systemAttr, stdout, stderr)
+	drvPath, outPath, err = showDerivationWithFlake(ctx, flakeUrl, gitSource.Hostname, n.systemAttr, stdout, stderr)
 	if err != nil {
 		return
 	}
-	machineId, err = getExpectedMachineId(ctx, flakeUrl, hostname, n.systemAttr, stdout, stderr)
+	machineId, err = getExpectedMachineId(ctx, flakeUrl, gitSource.Hostname, n.systemAttr, stdout, stderr)
 	return
 }
 

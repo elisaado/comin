@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/nlewo/comin/internal/utils"
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,15 +32,19 @@ func (n *GitNix) NeedToReboot(outPath, operation string) bool {
 	return utils.NeedToRebootLinux(outPath, operation)
 }
 
-func (n *GitNix) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
-	tempDir, err := cloneRepoToTemp(repositoryPath, commitId, submodules)
+func (n *GitNix) Eval(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+	gitSource := source.GetGit()
+	if gitSource == nil {
+		return "", "", "", fmt.Errorf("expected Git source, got nil")
+	}
+	tempDir, err := cloneRepoToTemp(repositoryPath, gitSource.SelectedCommitId, submodules)
 	defer os.RemoveAll(tempDir) // nolint: errcheck
 	if err != nil {
 		return
 	}
 	logrus.Debugf("nix: temporary cloned into %s", tempDir)
-	nixDir := path.Join(tempDir, repositorySubdir)
-	return showDerivationWithNix(ctx, nixDir, systemAttr, stdout, stderr)
+	nixDir := path.Join(tempDir, gitSource.RepositorySubdir)
+	return showDerivationWithNix(ctx, nixDir, gitSource.SystemAttr, stdout, stderr)
 }
 
 func (n *GitNix) Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error) {
