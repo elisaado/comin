@@ -164,10 +164,7 @@ func (b *Builder) Stop() {
 }
 
 type Evaluator struct {
-	repositoryPath string
-	source         *protobuf.Source
-	submodules     bool
-
+	source     *protobuf.Source
 	evalFunc executor.EvalFunc
 
 	drvPath   string
@@ -179,7 +176,7 @@ type Evaluator struct {
 }
 
 func (r *Evaluator) Run(ctx context.Context) (err error) {
-	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.repositoryPath, r.source, r.submodules, r.stdout, r.stderr)
+	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.source, r.stdout, r.stderr)
 	return err
 }
 
@@ -217,12 +214,10 @@ func (b *Builder) Eval(ctx context.Context, generation *protobuf.Generation) err
 	stdout, stderr := b.broker.GetLogger("evaluation", generation.Uuid)
 
 	evaluator := &Evaluator{
-		repositoryPath: b.repositoryPath,
-		source:         generation.Source,
-		submodules:     b.submodules,
-		evalFunc:       b.executor.Eval,
-		stdout:         stdout,
-		stderr:         stderr,
+		source:     generation.Source,
+		evalFunc: b.executor.Eval,
+		stdout:     stdout,
+		stderr:     stderr,
 	}
 	b.evaluator = NewExec(evaluator, b.evalTimeout)
 

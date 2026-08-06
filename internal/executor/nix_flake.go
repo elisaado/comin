@@ -13,11 +13,17 @@ import (
 )
 
 type GitNixFlake struct {
-	systemAttr string
+	systemAttr     string
+	repositoryPath string
+	submodules     bool
 }
 
-func NewGitNixFlake(systemAttr string) (*GitNixFlake, error) {
-	return &GitNixFlake{systemAttr: systemAttr}, nil
+func NewGitNixFlake(systemAttr, repositoryPath string, submodules bool) (*GitNixFlake, error) {
+	return &GitNixFlake{
+		systemAttr:     systemAttr,
+		repositoryPath: repositoryPath,
+		submodules:     submodules,
+	}, nil
 }
 
 func (n *GitNixFlake) ReadMachineId() (string, error) {
@@ -47,13 +53,13 @@ func (n *GitNixFlake) ShowDerivation(ctx context.Context, flakeUrl, hostname str
 	return showDerivationWithFlake(ctx, flakeUrl, hostname, n.systemAttr, os.Stdout, os.Stderr)
 }
 
-func (n *GitNixFlake) Eval(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+func (n *GitNixFlake) Eval(ctx context.Context, source *protobuf.Source, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
 	gitSource := source.GetGit()
 	if gitSource == nil {
 		return "", "", "", fmt.Errorf("expected Git source, got nil")
 	}
-	flakeUrl := fmt.Sprintf("git+file://%s?dir=%s&rev=%s", repositoryPath, gitSource.RepositorySubdir, gitSource.SelectedCommitId)
-	if submodules {
+	flakeUrl := fmt.Sprintf("git+file://%s?dir=%s&rev=%s", n.repositoryPath, gitSource.RepositorySubdir, gitSource.SelectedCommitId)
+	if n.submodules {
 		flakeUrl += "&submodules=1"
 	}
 	drvPath, outPath, err = showDerivationWithFlake(ctx, flakeUrl, gitSource.Hostname, n.systemAttr, stdout, stderr)

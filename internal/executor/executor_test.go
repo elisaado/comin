@@ -11,7 +11,7 @@ import (
 
 func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with Darwin configuration
-	executor, err := NewGitNixFlake("darwinConfigurations")
+	executor, err := NewGitNixFlake("darwinConfigurations", "/test/path", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "darwinConfigurations", executor.systemAttr)
@@ -19,7 +19,7 @@ func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 
 func TestNixExecutorWithNixOSConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with NixOS configuration
-	executor, err := NewGitNixFlake("nixosConfigurations")
+	executor, err := NewGitNixFlake("nixosConfigurations", "/test/path", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "nixosConfigurations", executor.systemAttr)
@@ -66,7 +66,7 @@ func TestNixExecutorEval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewGitNixFlake(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, tt.repositoryPath, false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -74,7 +74,7 @@ func TestNixExecutorEval(t *testing.T) {
 			// Test that Eval doesn't panic and handles parameters correctly
 			// This will error in test environment since nix commands will fail,
 			// but we're testing the code path and parameter handling
-			_, _, _, err = executor.Eval(ctx, tt.repositoryPath, tt.source, false, os.Stdout, os.Stderr)
+			_, _, _, err = executor.Eval(ctx, tt.source, os.Stdout, os.Stderr)
 			t.Logf("Eval with %s returned error: %v (expected in test environment)", tt.systemAttr, err)
 		})
 	}
@@ -103,7 +103,7 @@ func TestNixExecutorShowDerivation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewGitNixFlake(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -135,7 +135,7 @@ func TestNixExecutorList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewGitNixFlake(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			// Test that List doesn't panic and handles configuration attribute correctly
@@ -168,7 +168,7 @@ func TestNixExecutorDeploy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewGitNixFlake(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()

@@ -14,10 +14,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type GitNix struct{}
+type GitNix struct {
+	repositoryPath string
+	submodules     bool
+}
 
-func NewGitNix() (*GitNix, error) {
-	return &GitNix{}, nil
+func NewGitNix(repositoryPath string, submodules bool) (*GitNix, error) {
+	return &GitNix{
+		repositoryPath: repositoryPath,
+		submodules:     submodules,
+	}, nil
 }
 
 func (n *GitNix) ReadMachineId() (string, error) {
@@ -32,12 +38,12 @@ func (n *GitNix) NeedToReboot(outPath, operation string) bool {
 	return utils.NeedToRebootLinux(outPath, operation)
 }
 
-func (n *GitNix) Eval(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+func (n *GitNix) Eval(ctx context.Context, source *protobuf.Source, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
 	gitSource := source.GetGit()
 	if gitSource == nil {
 		return "", "", "", fmt.Errorf("expected Git source, got nil")
 	}
-	tempDir, err := cloneRepoToTemp(repositoryPath, gitSource.SelectedCommitId, submodules)
+	tempDir, err := cloneRepoToTemp(n.repositoryPath, gitSource.SelectedCommitId, n.submodules)
 	defer os.RemoveAll(tempDir) // nolint: errcheck
 	if err != nil {
 		return

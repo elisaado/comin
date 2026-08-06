@@ -10,20 +10,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type EvalFunc func(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error)
+type EvalFunc func(ctx context.Context, source *protobuf.Source, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error)
 type BuildFunc func(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) error
 
-func New(repositoryType string) (e Executor, err error) {
+func New(repositoryType, repositoryPath string, submodules bool) (e Executor, err error) {
 	switch repositoryType {
 	case "flake":
 		if runtime.GOOS == "darwin" {
-			return NewGitNixFlakeDarwin()
+			return NewGitNixFlakeDarwin(repositoryPath, submodules)
 		} else {
-			return NewGitNixFlakeNixOS()
+			return NewGitNixFlakeNixOS(repositoryPath, submodules)
 		}
 
 	case "nix":
-		return NewGitNixNixOS()
+		return NewGitNixNixOS(repositoryPath, submodules)
 	}
 	return e, fmt.Errorf("Failed to create the executor: %s", err)
 }
@@ -34,7 +34,7 @@ func New(repositoryType string) (e Executor, err error) {
 // Garnix implementation (such as proposed in
 // https://github.com/nlewo/comin/pull/74)
 type Executor interface {
-	Eval(ctx context.Context, repositoryPath string, source *protobuf.Source, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error)
+	Eval(ctx context.Context, source *protobuf.Source, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error)
 	Build(ctx context.Context, drvPath string, stdout, stdin io.WriteCloser) (err error)
 	Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error)
 	NeedToReboot(outPath, operation string) bool
@@ -44,19 +44,19 @@ type Executor interface {
 	IsStorePathExist(string) bool
 }
 
-func NewGitNixFlakeNixOS() (e Executor, err error) {
+func NewGitNixFlakeNixOS(repositoryPath string, submodules bool) (e Executor, err error) {
 	logrus.Info("executor: creating a NixOS flake executor")
-	e, err = NewGitNixFlake("nixosConfigurations")
+	e, err = NewGitNixFlake("nixosConfigurations", repositoryPath, submodules)
 	return
 }
-func NewGitNixFlakeDarwin() (e Executor, err error) {
+func NewGitNixFlakeDarwin(repositoryPath string, submodules bool) (e Executor, err error) {
 	logrus.Info("executor: creating a nix-darwin flake executor")
-	e, err = NewGitNixFlake("darwinConfigurations")
+	e, err = NewGitNixFlake("darwinConfigurations", repositoryPath, submodules)
 	return
 }
 
-func NewGitNixNixOS() (e Executor, err error) {
+func NewGitNixNixOS(repositoryPath string, submodules bool) (e Executor, err error) {
 	logrus.Info("executor: creating a NixOS executor")
-	e, err = NewGitNix()
+	e, err = NewGitNix(repositoryPath, submodules)
 	return
 }
