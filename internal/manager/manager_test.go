@@ -109,7 +109,7 @@ func TestBuild(t *testing.T) {
 
 	commitId := "id-1"
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: commitId,
 	}
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -129,7 +129,7 @@ func TestBuild(t *testing.T) {
 
 	commitId = "id-2"
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: commitId,
 	}
 	// This simulates the success of an evaluation
@@ -154,7 +154,7 @@ func TestBuild(t *testing.T) {
 
 	// This simulates the success of a build
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-3",
 	}
 	eMock.evalOk <- true
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 	// This simulates the success of another build and ensure this
 	// new build is the one proposed for deployment.
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-4",
 	}
 	eMock.evalOk <- true
@@ -183,7 +183,7 @@ func TestBuild(t *testing.T) {
 
 	// This simulates the push of new commit while building
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-5",
 	}
 	eMock.evalOk <- true
@@ -249,7 +249,7 @@ func TestIncorrectMachineId(t *testing.T) {
 	go m.Run(t.Context())
 
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id",
 	}
 
@@ -281,7 +281,7 @@ func TestCorrectMachineId(t *testing.T) {
 	go m.Run(t.Context())
 
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id",
 	}
 

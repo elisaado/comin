@@ -91,7 +91,7 @@ func StringToBuildStatus(statusStr string) BuildStatus {
 	}
 }
 
-func (s *Store) NewGeneration(hostname, repositoryDir, systemAttr string, rs *protobuf.RepositoryStatus) (g protobuf.Generation) {
+func (s *Store) NewGeneration(hostname, repositoryDir, systemAttr string, rs *protobuf.GitRepositoryStatus) (g protobuf.Generation) {
 	// Find the selected remote URL
 	selectedRemoteUrl := ""
 	for _, remote := range rs.Remotes {

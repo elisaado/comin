@@ -1407,11 +1407,11 @@ func (x *Confirmer) GetAutoconfirmStarted() *wrapperspb.BoolValue {
 }
 
 type Fetcher struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	IsFetching       *wrapperspb.BoolValue  `protobuf:"bytes,1,opt,name=is_fetching,json=isFetching" json:"is_fetching,omitempty"`
-	RepositoryStatus *RepositoryStatus      `protobuf:"bytes,2,opt,name=repository_status,json=repositoryStatus" json:"repository_status,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	IsFetching          *wrapperspb.BoolValue  `protobuf:"bytes,1,opt,name=is_fetching,json=isFetching" json:"is_fetching,omitempty"`
+	GitRepositoryStatus *GitRepositoryStatus   `protobuf:"bytes,2,opt,name=git_repository_status,json=gitRepositoryStatus" json:"git_repository_status,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Fetcher) Reset() {
@@ -1451,9 +1451,9 @@ func (x *Fetcher) GetIsFetching() *wrapperspb.BoolValue {
 	return nil
 }
 
-func (x *Fetcher) GetRepositoryStatus() *RepositoryStatus {
+func (x *Fetcher) GetGitRepositoryStatus() *GitRepositoryStatus {
 	if x != nil {
-		return x.RepositoryStatus
+		return x.GitRepositoryStatus
 	}
 	return nil
 }
@@ -1626,7 +1626,7 @@ func (x *Remote) GetFetched() *wrapperspb.BoolValue {
 	return nil
 }
 
-type RepositoryStatus struct {
+type GitRepositoryStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// This is the deployed Main commit ID. It is used to ensure fast forward
 	SelectedCommitId        string                `protobuf:"bytes,1,opt,name=selected_commit_id,json=selectedCommitId" json:"selected_commit_id,omitempty"`
@@ -1647,20 +1647,20 @@ type RepositoryStatus struct {
 	sizeCache                    protoimpl.SizeCache
 }
 
-func (x *RepositoryStatus) Reset() {
-	*x = RepositoryStatus{}
+func (x *GitRepositoryStatus) Reset() {
+	*x = GitRepositoryStatus{}
 	mi := &file_pkg_protobuf_services_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RepositoryStatus) String() string {
+func (x *GitRepositoryStatus) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RepositoryStatus) ProtoMessage() {}
+func (*GitRepositoryStatus) ProtoMessage() {}
 
-func (x *RepositoryStatus) ProtoReflect() protoreflect.Message {
+func (x *GitRepositoryStatus) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_protobuf_services_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1672,96 +1672,96 @@ func (x *RepositoryStatus) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RepositoryStatus.ProtoReflect.Descriptor instead.
-func (*RepositoryStatus) Descriptor() ([]byte, []int) {
+// Deprecated: Use GitRepositoryStatus.ProtoReflect.Descriptor instead.
+func (*GitRepositoryStatus) Descriptor() ([]byte, []int) {
 	return file_pkg_protobuf_services_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *RepositoryStatus) GetSelectedCommitId() string {
+func (x *GitRepositoryStatus) GetSelectedCommitId() string {
 	if x != nil {
 		return x.SelectedCommitId
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetSelectedCommitMsg() string {
+func (x *GitRepositoryStatus) GetSelectedCommitMsg() string {
 	if x != nil {
 		return x.SelectedCommitMsg
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetSelectedRemoteName() string {
+func (x *GitRepositoryStatus) GetSelectedRemoteName() string {
 	if x != nil {
 		return x.SelectedRemoteName
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetSelectedBranchName() string {
+func (x *GitRepositoryStatus) GetSelectedBranchName() string {
 	if x != nil {
 		return x.SelectedBranchName
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetSelectedBranchIsTesting() *wrapperspb.BoolValue {
+func (x *GitRepositoryStatus) GetSelectedBranchIsTesting() *wrapperspb.BoolValue {
 	if x != nil {
 		return x.SelectedBranchIsTesting
 	}
 	return nil
 }
 
-func (x *RepositoryStatus) GetSelectedCommitSigned() *wrapperspb.BoolValue {
+func (x *GitRepositoryStatus) GetSelectedCommitSigned() *wrapperspb.BoolValue {
 	if x != nil {
 		return x.SelectedCommitSigned
 	}
 	return nil
 }
 
-func (x *RepositoryStatus) GetSelectedCommitSignedBy() string {
+func (x *GitRepositoryStatus) GetSelectedCommitSignedBy() string {
 	if x != nil {
 		return x.SelectedCommitSignedBy
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetSelectedCommitShouldBeSigned() *wrapperspb.BoolValue {
+func (x *GitRepositoryStatus) GetSelectedCommitShouldBeSigned() *wrapperspb.BoolValue {
 	if x != nil {
 		return x.SelectedCommitShouldBeSigned
 	}
 	return nil
 }
 
-func (x *RepositoryStatus) GetMainCommitId() string {
+func (x *GitRepositoryStatus) GetMainCommitId() string {
 	if x != nil {
 		return x.MainCommitId
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetMainRemoteName() string {
+func (x *GitRepositoryStatus) GetMainRemoteName() string {
 	if x != nil {
 		return x.MainRemoteName
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetMainBranchName() string {
+func (x *GitRepositoryStatus) GetMainBranchName() string {
 	if x != nil {
 		return x.MainBranchName
 	}
 	return ""
 }
 
-func (x *RepositoryStatus) GetRemotes() []*Remote {
+func (x *GitRepositoryStatus) GetRemotes() []*Remote {
 	if x != nil {
 		return x.Remotes
 	}
 	return nil
 }
 
-func (x *RepositoryStatus) GetErrorMsg() string {
+func (x *GitRepositoryStatus) GetErrorMsg() string {
 	if x != nil {
 		return x.ErrorMsg
 	}
@@ -2517,12 +2517,12 @@ func (x *Event_ManagerState) GetState() *State {
 }
 
 type Event_Fetched struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	RepositoryStatus *RepositoryStatus      `protobuf:"bytes,1,opt,name=repositoryStatus" json:"repositoryStatus,omitempty"`
-	Updated          bool                   `protobuf:"varint,2,opt,name=updated" json:"updated,omitempty"`
-	Verified         bool                   `protobuf:"varint,3,opt,name=verified" json:"verified,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	GitRepositoryStatus *GitRepositoryStatus   `protobuf:"bytes,1,opt,name=gitRepositoryStatus" json:"gitRepositoryStatus,omitempty"`
+	Updated             bool                   `protobuf:"varint,2,opt,name=updated" json:"updated,omitempty"`
+	Verified            bool                   `protobuf:"varint,3,opt,name=verified" json:"verified,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Event_Fetched) Reset() {
@@ -2555,9 +2555,9 @@ func (*Event_Fetched) Descriptor() ([]byte, []int) {
 	return file_pkg_protobuf_services_proto_rawDescGZIP(), []int{1, 13}
 }
 
-func (x *Event_Fetched) GetRepositoryStatus() *RepositoryStatus {
+func (x *Event_Fetched) GetGitRepositoryStatus() *GitRepositoryStatus {
 	if x != nil {
-		return x.RepositoryStatus
+		return x.GitRepositoryStatus
 	}
 	return nil
 }
@@ -2821,7 +2821,7 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\n" +
 	"\x1bpkg/protobuf/services.proto\x12\bprotobuf\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\"<\n" +
 	"\tOperation\x12/\n" +
-	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xe2\x12\n" +
+	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xeb\x12\n" +
 	"\x05Event\x12G\n" +
 	"\x0fevalStartedType\x18\x01 \x01(\v2\x1b.protobuf.Event.EvalStartedH\x00R\x0fevalStartedType\x12J\n" +
 	"\x10evalFinishedType\x18\x02 \x01(\v2\x1c.protobuf.Event.EvalFinishedH\x00R\x10evalFinishedType\x12J\n" +
@@ -2879,9 +2879,9 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x14.protobuf.DeploymentR\n" +
 	"deployment\x1a5\n" +
 	"\fManagerState\x12%\n" +
-	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1a\x87\x01\n" +
-	"\aFetched\x12F\n" +
-	"\x10repositoryStatus\x18\x01 \x01(\v2\x1a.protobuf.RepositoryStatusR\x10repositoryStatus\x12\x18\n" +
+	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1a\x90\x01\n" +
+	"\aFetched\x12O\n" +
+	"\x13gitRepositoryStatus\x18\x01 \x01(\v2\x1d.protobuf.GitRepositoryStatusR\x13gitRepositoryStatus\x12\x18\n" +
 	"\aupdated\x18\x02 \x01(\bR\aupdated\x12\x1a\n" +
 	"\bverified\x18\x03 \x01(\bR\bverified\x1a\xa5\x02\n" +
 	"\x03Log\x12\x1f\n" +
@@ -3015,11 +3015,11 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\tconfirmed\x18\x03 \x01(\tR\tconfirmed\x121\n" +
 	"\x14autoconfirm_duration\x18\x04 \x01(\x03R\x13autoconfirmDuration\x12P\n" +
 	"\x16autoconfirm_started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x14autoconfirmStartedAt\x12K\n" +
-	"\x13autoconfirm_started\x18\x06 \x01(\v2\x1a.google.protobuf.BoolValueR\x12autoconfirmStarted\"\x8f\x01\n" +
+	"\x13autoconfirm_started\x18\x06 \x01(\v2\x1a.google.protobuf.BoolValueR\x12autoconfirmStarted\"\x99\x01\n" +
 	"\aFetcher\x12;\n" +
 	"\vis_fetching\x18\x01 \x01(\v2\x1a.google.protobuf.BoolValueR\n" +
-	"isFetching\x12G\n" +
-	"\x11repository_status\x18\x02 \x01(\v2\x1a.protobuf.RepositoryStatusR\x10repositoryStatus\"\x91\x01\n" +
+	"isFetching\x12Q\n" +
+	"\x15git_repository_status\x18\x02 \x01(\v2\x1d.protobuf.GitRepositoryStatusR\x13gitRepositoryStatus\"\x91\x01\n" +
 	"\x06Branch\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tcommit_id\x18\x02 \x01(\tR\bcommitId\x12\x1d\n" +
@@ -3035,8 +3035,8 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\atesting\x18\x05 \x01(\v2\x10.protobuf.BranchR\atesting\x129\n" +
 	"\n" +
 	"fetched_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\x124\n" +
-	"\afetched\x18\a \x01(\v2\x1a.google.protobuf.BoolValueR\afetched\"\xe1\x05\n" +
-	"\x10RepositoryStatus\x12,\n" +
+	"\afetched\x18\a \x01(\v2\x1a.google.protobuf.BoolValueR\afetched\"\xe4\x05\n" +
+	"\x13GitRepositoryStatus\x12,\n" +
 	"\x12selected_commit_id\x18\x01 \x01(\tR\x10selectedCommitId\x12.\n" +
 	"\x13selected_commit_msg\x18\x02 \x01(\tR\x11selectedCommitMsg\x120\n" +
 	"\x14selected_remote_name\x18\x03 \x01(\tR\x12selectedRemoteName\x120\n" +
@@ -3104,7 +3104,7 @@ var file_pkg_protobuf_services_proto_goTypes = []any{
 	(*Fetcher)(nil),                     // 11: protobuf.Fetcher
 	(*Branch)(nil),                      // 12: protobuf.Branch
 	(*Remote)(nil),                      // 13: protobuf.Remote
-	(*RepositoryStatus)(nil),            // 14: protobuf.RepositoryStatus
+	(*GitRepositoryStatus)(nil),         // 14: protobuf.GitRepositoryStatus
 	(*DeployerState)(nil),               // 15: protobuf.DeployerState
 	(*Store)(nil),                       // 16: protobuf.Store
 	(*Event_EvalStarted)(nil),           // 17: protobuf.Event.EvalStarted
@@ -3183,15 +3183,15 @@ var file_pkg_protobuf_services_proto_depIdxs = []int32{
 	37, // 48: protobuf.Confirmer.autoconfirm_started_at:type_name -> google.protobuf.Timestamp
 	38, // 49: protobuf.Confirmer.autoconfirm_started:type_name -> google.protobuf.BoolValue
 	38, // 50: protobuf.Fetcher.is_fetching:type_name -> google.protobuf.BoolValue
-	14, // 51: protobuf.Fetcher.repository_status:type_name -> protobuf.RepositoryStatus
+	14, // 51: protobuf.Fetcher.git_repository_status:type_name -> protobuf.GitRepositoryStatus
 	12, // 52: protobuf.Remote.main:type_name -> protobuf.Branch
 	12, // 53: protobuf.Remote.testing:type_name -> protobuf.Branch
 	37, // 54: protobuf.Remote.fetched_at:type_name -> google.protobuf.Timestamp
 	38, // 55: protobuf.Remote.fetched:type_name -> google.protobuf.BoolValue
-	38, // 56: protobuf.RepositoryStatus.selected_branch_is_testing:type_name -> google.protobuf.BoolValue
-	38, // 57: protobuf.RepositoryStatus.selected_commit_signed:type_name -> google.protobuf.BoolValue
-	38, // 58: protobuf.RepositoryStatus.selected_commit_should_be_signed:type_name -> google.protobuf.BoolValue
-	13, // 59: protobuf.RepositoryStatus.remotes:type_name -> protobuf.Remote
+	38, // 56: protobuf.GitRepositoryStatus.selected_branch_is_testing:type_name -> google.protobuf.BoolValue
+	38, // 57: protobuf.GitRepositoryStatus.selected_commit_signed:type_name -> google.protobuf.BoolValue
+	38, // 58: protobuf.GitRepositoryStatus.selected_commit_should_be_signed:type_name -> google.protobuf.BoolValue
+	13, // 59: protobuf.GitRepositoryStatus.remotes:type_name -> protobuf.Remote
 	6,  // 60: protobuf.Store.deployments:type_name -> protobuf.Deployment
 	5,  // 61: protobuf.Store.generations:type_name -> protobuf.Generation
 	15, // 62: protobuf.Store.deployer:type_name -> protobuf.DeployerState
@@ -3203,7 +3203,7 @@ var file_pkg_protobuf_services_proto_depIdxs = []int32{
 	6,  // 68: protobuf.Event.DeploymentFinished.deployment:type_name -> protobuf.Deployment
 	6,  // 69: protobuf.Event.RebootRequired.deployment:type_name -> protobuf.Deployment
 	7,  // 70: protobuf.Event.ManagerState.state:type_name -> protobuf.State
-	14, // 71: protobuf.Event.Fetched.repositoryStatus:type_name -> protobuf.RepositoryStatus
+	14, // 71: protobuf.Event.Fetched.gitRepositoryStatus:type_name -> protobuf.GitRepositoryStatus
 	32, // 72: protobuf.Event.Log.open:type_name -> protobuf.Event.Log.Open
 	33, // 73: protobuf.Event.Log.close:type_name -> protobuf.Event.Log.Close
 	34, // 74: protobuf.Event.Log.line:type_name -> protobuf.Event.Log.Line

@@ -56,7 +56,7 @@ func boolToString(v bool) string {
 // FetcherModel holds the current fetcher state and renders it.
 type FetcherModel struct {
 	IsFetching       bool
-	RepositoryStatus *protobuf.RepositoryStatus
+	GitRepositoryStatus *protobuf.GitRepositoryStatus
 }
 
 func (fm FetcherModel) View() string {
@@ -70,10 +70,10 @@ func (fm FetcherModel) View() string {
 	}
 	b.WriteString(sectionStyle.Render("Fetcher") + "  " + status + "\n")
 
-	if fm.RepositoryStatus == nil {
+	if fm.GitRepositoryStatus == nil {
 		return b.String()
 	}
-	for _, r := range fm.RepositoryStatus.Remotes {
+	for _, r := range fm.GitRepositoryStatus.Remotes {
 		fetchedAt := ""
 		if r.FetchedAt != nil {
 			fetchedAt = "  " + dimStyle.Render(formatTime(r.FetchedAt.AsTime()))
@@ -307,7 +307,7 @@ func UpdateManager(manager *ManagerModel, event *protobuf.Event) {
 		}
 		if state.Fetcher != nil {
 			manager.Fetcher.IsFetching = state.Fetcher.IsFetching.GetValue()
-			manager.Fetcher.RepositoryStatus = state.Fetcher.RepositoryStatus
+			manager.Fetcher.GitRepositoryStatus = state.Fetcher.GitRepositoryStatus
 		}
 	case *protobuf.Event_EvalStartedType:
 		manager.Builder.IsEvaluating = true
@@ -329,7 +329,7 @@ func UpdateManager(manager *ManagerModel, event *protobuf.Event) {
 		manager.Deployer.Deployment = e.DeploymentFinishedType.Deployment
 	case *protobuf.Event_Fetched_:
 		manager.Fetcher.IsFetching = false
-		manager.Fetcher.RepositoryStatus = e.Fetched.RepositoryStatus
+		manager.Fetcher.GitRepositoryStatus = e.Fetched.GitRepositoryStatus
 	case *protobuf.Event_Suspend_:
 		manager.IsSuspended = true
 	case *protobuf.Event_Resume_:

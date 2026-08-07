@@ -17,7 +17,7 @@ import (
 
 type Fetcher struct {
 	isFetching       atomic.Bool
-	repositoryStatus *protobuf.RepositoryStatus
+	repositoryStatus *protobuf.GitRepositoryStatus
 	mu               sync.RWMutex
 	submitRemotes    chan []string
 	repo             repository.Repository
@@ -49,7 +49,7 @@ type RemoteState struct {
 
 type State struct {
 	IsFetching       bool
-	RepositoryStatus *protobuf.RepositoryStatus
+	RepositoryStatus *protobuf.GitRepositoryStatus
 }
 
 func (f *Fetcher) GetState() *protobuf.Fetcher {
@@ -57,7 +57,7 @@ func (f *Fetcher) GetState() *protobuf.Fetcher {
 	defer f.mu.RUnlock()
 	return &protobuf.Fetcher{
 		IsFetching:       wrapperspb.Bool(f.isFetching.Load()),
-		RepositoryStatus: f.repo.GetRepositoryStatus(),
+		GitRepositoryStatus: f.repo.GetRepositoryStatus(),
 	}
 }
 
@@ -65,7 +65,7 @@ func (f *Fetcher) Start(ctx context.Context) {
 	logrus.Info("fetcher: starting")
 	go func() {
 		remotes := make([]string, 0)
-		var workerRepositoryStatusCh chan *protobuf.RepositoryStatus
+		var workerRepositoryStatusCh chan *protobuf.GitRepositoryStatus
 		for {
 			select {
 			case submittedRemotes := <-f.submitRemotes:
@@ -83,7 +83,7 @@ func (f *Fetcher) Start(ctx context.Context) {
 				f.mu.Unlock()
 				// Check if the commit is verified (signed when it should be)
 				verified := !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue()
-				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{RepositoryStatus: rs, Updated: updated, Verified: verified}}, CreatedAt: timestamppb.New(time.Now().UTC())})
+				f.broker.Publish(&protobuf.Event{Type: &protobuf.Event_Fetched_{Fetched: &protobuf.Event_Fetched{GitRepositoryStatus: rs, Updated: updated, Verified: verified}}, CreatedAt: timestamppb.New(time.Now().UTC())})
 			}
 			if !f.isFetching.Load() && len(remotes) != 0 {
 				f.isFetching.Store(true)

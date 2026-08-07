@@ -56,7 +56,7 @@ func (s *cominServer) GetState(ctx context.Context, empty *emptypb.Empty) (*prot
 func (s *cominServer) Fetch(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
 	fetcher := s.manager.GetState().Fetcher
 	remotes := make([]string, 0)
-	for _, r := range fetcher.RepositoryStatus.Remotes {
+	for _, r := range fetcher.GitRepositoryStatus.Remotes {
 		remotes = append(remotes, r.Name)
 	}
 	s.manager.Fetcher.TriggerFetch(remotes)

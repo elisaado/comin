@@ -67,7 +67,7 @@ message Event {
     State state = 1;
   }
   message Fetched {
-    RepositoryStatus repositoryStatus = 1;
+    GitRepositoryStatus gitRepositoryStatus = 1;
     bool updated = 2;
     bool verified = 3;
   }
@@ -236,7 +236,7 @@ message Confirmer {
 
 message Fetcher {
   google.protobuf.BoolValue is_fetching = 1;
-  RepositoryStatus repository_status = 2;
+  GitRepositoryStatus git_repository_status = 2;
 }
 
 message Branch {
@@ -257,7 +257,7 @@ message Remote {
   google.protobuf.BoolValue fetched = 7;
 }
 
-message RepositoryStatus {
+message GitRepositoryStatus {
   // This is the deployed Main commit ID. It is used to ensure fast forward
   string selected_commit_id = 1;
   string selected_commit_msg = 2;
