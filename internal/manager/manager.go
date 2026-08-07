@@ -168,7 +168,7 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 					if !fetched.Updated {
 						continue
 					}
-					rs := fetched.GitRepositoryStatus
+					rs := fetched.GetGitRepositoryStatus()
 					if fetched.Verified {
 						logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
 						generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)

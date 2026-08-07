@@ -41,7 +41,7 @@ func TestFetcher(t *testing.T) {
 			fetched := e.GetFetched()
 			assert.NotNil(c, fetched)
 			assert.True(c, fetched.Updated)
-			assert.Equal(c, commitId, fetched.GitRepositoryStatus.SelectedCommitId)
+			assert.Equal(c, commitId, fetched.GetGitRepositoryStatus().SelectedCommitId)
 		}, 5*time.Second, 100*time.Millisecond, "fetcher failed to fetch")
 
 		assert.False(t, f.IsFetching())
@@ -56,7 +56,7 @@ func TestFetcher(t *testing.T) {
 		fetched := e.GetFetched()
 		assert.NotNil(c, fetched)
 		assert.True(c, fetched.Updated)
-		assert.Equal(c, "id-5", fetched.GitRepositoryStatus.SelectedCommitId)
+		assert.Equal(c, "id-5", fetched.GetGitRepositoryStatus().SelectedCommitId)
 	}, 5*time.Second, 100*time.Millisecond, "fetcher failed to fetch")
 
 	r.RsCh <- &protobuf.GitRepositoryStatus{
@@ -70,7 +70,7 @@ func TestFetcher(t *testing.T) {
 		fetched := e.GetFetched()
 		assert.NotNil(c, fetched)
 		assert.True(c, fetched.Updated)
-		assert.Equal(c, "id-6", fetched.GitRepositoryStatus.SelectedCommitId)
+		assert.Equal(c, "id-6", fetched.GetGitRepositoryStatus().SelectedCommitId)
 	}, 5*time.Second, 100*time.Millisecond, "fetcher failed to fetch")
 }
 

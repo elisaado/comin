@@ -2517,12 +2517,15 @@ func (x *Event_ManagerState) GetState() *State {
 }
 
 type Event_Fetched struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	GitRepositoryStatus *GitRepositoryStatus   `protobuf:"bytes,1,opt,name=gitRepositoryStatus" json:"gitRepositoryStatus,omitempty"`
-	Updated             bool                   `protobuf:"varint,2,opt,name=updated" json:"updated,omitempty"`
-	Verified            bool                   `protobuf:"varint,3,opt,name=verified" json:"verified,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Updated  bool                   `protobuf:"varint,1,opt,name=updated" json:"updated,omitempty"`
+	Verified bool                   `protobuf:"varint,2,opt,name=verified" json:"verified,omitempty"`
+	// Types that are valid to be assigned to Type:
+	//
+	//	*Event_Fetched_GitRepositoryStatus
+	Type          isEvent_Fetched_Type `protobuf_oneof:"Type"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Event_Fetched) Reset() {
@@ -2555,13 +2558,6 @@ func (*Event_Fetched) Descriptor() ([]byte, []int) {
 	return file_pkg_protobuf_services_proto_rawDescGZIP(), []int{1, 13}
 }
 
-func (x *Event_Fetched) GetGitRepositoryStatus() *GitRepositoryStatus {
-	if x != nil {
-		return x.GitRepositoryStatus
-	}
-	return nil
-}
-
 func (x *Event_Fetched) GetUpdated() bool {
 	if x != nil {
 		return x.Updated
@@ -2575,6 +2571,32 @@ func (x *Event_Fetched) GetVerified() bool {
 	}
 	return false
 }
+
+func (x *Event_Fetched) GetType() isEvent_Fetched_Type {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+func (x *Event_Fetched) GetGitRepositoryStatus() *GitRepositoryStatus {
+	if x != nil {
+		if x, ok := x.Type.(*Event_Fetched_GitRepositoryStatus); ok {
+			return x.GitRepositoryStatus
+		}
+	}
+	return nil
+}
+
+type isEvent_Fetched_Type interface {
+	isEvent_Fetched_Type()
+}
+
+type Event_Fetched_GitRepositoryStatus struct {
+	GitRepositoryStatus *GitRepositoryStatus `protobuf:"bytes,3,opt,name=gitRepositoryStatus,oneof"`
+}
+
+func (*Event_Fetched_GitRepositoryStatus) isEvent_Fetched_Type() {}
 
 type Event_Log struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
@@ -2821,7 +2843,7 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\n" +
 	"\x1bpkg/protobuf/services.proto\x12\bprotobuf\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\"<\n" +
 	"\tOperation\x12/\n" +
-	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xeb\x12\n" +
+	"\x13operation_submitted\x18\x01 \x01(\tR\x12operationSubmitted\"\xf5\x12\n" +
 	"\x05Event\x12G\n" +
 	"\x0fevalStartedType\x18\x01 \x01(\v2\x1b.protobuf.Event.EvalStartedH\x00R\x0fevalStartedType\x12J\n" +
 	"\x10evalFinishedType\x18\x02 \x01(\v2\x1c.protobuf.Event.EvalFinishedH\x00R\x10evalFinishedType\x12J\n" +
@@ -2879,11 +2901,12 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x14.protobuf.DeploymentR\n" +
 	"deployment\x1a5\n" +
 	"\fManagerState\x12%\n" +
-	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1a\x90\x01\n" +
-	"\aFetched\x12O\n" +
-	"\x13gitRepositoryStatus\x18\x01 \x01(\v2\x1d.protobuf.GitRepositoryStatusR\x13gitRepositoryStatus\x12\x18\n" +
-	"\aupdated\x18\x02 \x01(\bR\aupdated\x12\x1a\n" +
-	"\bverified\x18\x03 \x01(\bR\bverified\x1a\xa5\x02\n" +
+	"\x05state\x18\x01 \x01(\v2\x0f.protobuf.StateR\x05state\x1a\x9a\x01\n" +
+	"\aFetched\x12\x18\n" +
+	"\aupdated\x18\x01 \x01(\bR\aupdated\x12\x1a\n" +
+	"\bverified\x18\x02 \x01(\bR\bverified\x12Q\n" +
+	"\x13gitRepositoryStatus\x18\x03 \x01(\v2\x1d.protobuf.GitRepositoryStatusH\x00R\x13gitRepositoryStatusB\x06\n" +
+	"\x04Type\x1a\xa5\x02\n" +
 	"\x03Log\x12\x1f\n" +
 	"\vobject_type\x18\x04 \x01(\tR\n" +
 	"objectType\x12\x1f\n" +
@@ -3252,6 +3275,9 @@ func file_pkg_protobuf_services_proto_init() {
 	}
 	file_pkg_protobuf_services_proto_msgTypes[4].OneofWrappers = []any{
 		(*Source_Git)(nil),
+	}
+	file_pkg_protobuf_services_proto_msgTypes[30].OneofWrappers = []any{
+		(*Event_Fetched_GitRepositoryStatus)(nil),
 	}
 	file_pkg_protobuf_services_proto_msgTypes[31].OneofWrappers = []any{
 		(*Event_Log_Open_)(nil),

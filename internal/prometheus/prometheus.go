@@ -133,7 +133,7 @@ func Subscribe(broker *brokerPkg.Broker, metrics *Prometheus) {
 
 func updateFetched(fetched *protobuf.Event_Fetched, metrics *Prometheus) {
 	metrics.lastFetchFailed.Reset()
-	for _, repo := range fetched.GitRepositoryStatus.GetRemotes() {
+	for _, repo := range fetched.GetGitRepositoryStatus().GetRemotes() {
 		status := "failed"
 		success := repo.GetFetched().GetValue()
 		if success {
