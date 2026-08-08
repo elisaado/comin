@@ -623,6 +623,10 @@ type Generation struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Uuid   string                 `protobuf:"bytes,1,opt,name=uuid" json:"uuid,omitempty"`
 	Source *Source                `protobuf:"bytes,2,opt,name=source" json:"source,omitempty"`
+	// This field is no longer part of a generation
+	//
+	// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+	RepositoryPath string `protobuf:"bytes,24,opt,name=repository_path,json=repositoryPath" json:"repository_path,omitempty"`
 	// Deprecated: These fields are kept for backward compatibility with existing store files.
 	// They will be migrated to the Source.git field on load.
 	//
@@ -708,6 +712,14 @@ func (x *Generation) GetSource() *Source {
 		return x.Source
 	}
 	return nil
+}
+
+// Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
+func (x *Generation) GetRepositoryPath() string {
+	if x != nil {
+		return x.RepositoryPath
+	}
+	return ""
 }
 
 // Deprecated: Marked as deprecated in pkg/protobuf/services.proto.
@@ -2942,11 +2954,12 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\x10main_branch_name\x18\f \x01(\tR\x0emainBranchName\"5\n" +
 	"\x06Source\x12!\n" +
 	"\x03git\x18\x01 \x01(\v2\r.protobuf.GitH\x00R\x03gitB\b\n" +
-	"\x06source\"\xa9\t\n" +
+	"\x06source\"\xd6\t\n" +
 	"\n" +
 	"Generation\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12(\n" +
-	"\x06source\x18\x02 \x01(\v2\x10.protobuf.SourceR\x06source\x12/\n" +
+	"\x06source\x18\x02 \x01(\v2\x10.protobuf.SourceR\x06source\x12+\n" +
+	"\x0frepository_path\x18\x18 \x01(\tB\x02\x18\x01R\x0erepositoryPath\x12/\n" +
 	"\x11repository_subdir\x18\x19 \x01(\tB\x02\x18\x01R\x10repositorySubdir\x12#\n" +
 	"\vsystem_attr\x18\x1a \x01(\tB\x02\x18\x01R\n" +
 	"systemAttr\x12\x1e\n" +

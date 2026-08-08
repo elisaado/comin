@@ -144,6 +144,9 @@ message Generation {
 
   Source source = 2;
 
+  // This field is no longer part of a generation
+  string repository_path = 24 [deprecated = true];;
+
   // Deprecated: These fields are kept for backward compatibility with existing store files.
   // They will be migrated to the Source.git field on load.
   string repository_subdir = 25 [deprecated = true];
