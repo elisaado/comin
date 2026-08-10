@@ -56,8 +56,10 @@ func (f *GitFetcher) GetState() *protobuf.Fetcher {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return &protobuf.Fetcher{
-		IsFetching:          wrapperspb.Bool(f.isFetching.Load()),
-		GitRepositoryStatus: f.repo.GetRepositoryStatus(),
+		IsFetching: wrapperspb.Bool(f.isFetching.Load()),
+		Status: &protobuf.Fetcher_GitRepositoryStatus{
+			GitRepositoryStatus: f.repo.GetRepositoryStatus(),
+		},
 	}
 }
 

@@ -1419,11 +1419,14 @@ func (x *Confirmer) GetAutoconfirmStarted() *wrapperspb.BoolValue {
 }
 
 type Fetcher struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	IsFetching          *wrapperspb.BoolValue  `protobuf:"bytes,1,opt,name=is_fetching,json=isFetching" json:"is_fetching,omitempty"`
-	GitRepositoryStatus *GitRepositoryStatus   `protobuf:"bytes,2,opt,name=git_repository_status,json=gitRepositoryStatus" json:"git_repository_status,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	IsFetching *wrapperspb.BoolValue  `protobuf:"bytes,1,opt,name=is_fetching,json=isFetching" json:"is_fetching,omitempty"`
+	// Types that are valid to be assigned to Status:
+	//
+	//	*Fetcher_GitRepositoryStatus
+	Status        isFetcher_Status `protobuf_oneof:"status"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Fetcher) Reset() {
@@ -1463,12 +1466,31 @@ func (x *Fetcher) GetIsFetching() *wrapperspb.BoolValue {
 	return nil
 }
 
-func (x *Fetcher) GetGitRepositoryStatus() *GitRepositoryStatus {
+func (x *Fetcher) GetStatus() isFetcher_Status {
 	if x != nil {
-		return x.GitRepositoryStatus
+		return x.Status
 	}
 	return nil
 }
+
+func (x *Fetcher) GetGitRepositoryStatus() *GitRepositoryStatus {
+	if x != nil {
+		if x, ok := x.Status.(*Fetcher_GitRepositoryStatus); ok {
+			return x.GitRepositoryStatus
+		}
+	}
+	return nil
+}
+
+type isFetcher_Status interface {
+	isFetcher_Status()
+}
+
+type Fetcher_GitRepositoryStatus struct {
+	GitRepositoryStatus *GitRepositoryStatus `protobuf:"bytes,2,opt,name=git_repository_status,json=gitRepositoryStatus,oneof"`
+}
+
+func (*Fetcher_GitRepositoryStatus) isFetcher_Status() {}
 
 type Branch struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -3051,11 +3073,12 @@ const file_pkg_protobuf_services_proto_rawDesc = "" +
 	"\tconfirmed\x18\x03 \x01(\tR\tconfirmed\x121\n" +
 	"\x14autoconfirm_duration\x18\x04 \x01(\x03R\x13autoconfirmDuration\x12P\n" +
 	"\x16autoconfirm_started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x14autoconfirmStartedAt\x12K\n" +
-	"\x13autoconfirm_started\x18\x06 \x01(\v2\x1a.google.protobuf.BoolValueR\x12autoconfirmStarted\"\x99\x01\n" +
+	"\x13autoconfirm_started\x18\x06 \x01(\v2\x1a.google.protobuf.BoolValueR\x12autoconfirmStarted\"\xa5\x01\n" +
 	"\aFetcher\x12;\n" +
 	"\vis_fetching\x18\x01 \x01(\v2\x1a.google.protobuf.BoolValueR\n" +
-	"isFetching\x12Q\n" +
-	"\x15git_repository_status\x18\x02 \x01(\v2\x1d.protobuf.GitRepositoryStatusR\x13gitRepositoryStatus\"\x91\x01\n" +
+	"isFetching\x12S\n" +
+	"\x15git_repository_status\x18\x02 \x01(\v2\x1d.protobuf.GitRepositoryStatusH\x00R\x13gitRepositoryStatusB\b\n" +
+	"\x06status\"\x91\x01\n" +
 	"\x06Branch\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tcommit_id\x18\x02 \x01(\tR\bcommitId\x12\x1d\n" +
@@ -3288,6 +3311,9 @@ func file_pkg_protobuf_services_proto_init() {
 	}
 	file_pkg_protobuf_services_proto_msgTypes[4].OneofWrappers = []any{
 		(*Source_Git)(nil),
+	}
+	file_pkg_protobuf_services_proto_msgTypes[11].OneofWrappers = []any{
+		(*Fetcher_GitRepositoryStatus)(nil),
 	}
 	file_pkg_protobuf_services_proto_msgTypes[30].OneofWrappers = []any{
 		(*Event_Fetched_GitRepositoryStatus)(nil),

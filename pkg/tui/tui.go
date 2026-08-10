@@ -307,7 +307,7 @@ func UpdateManager(manager *ManagerModel, event *protobuf.Event) {
 		}
 		if state.Fetcher != nil {
 			manager.Fetcher.IsFetching = state.Fetcher.IsFetching.GetValue()
-			manager.Fetcher.GitRepositoryStatus = state.Fetcher.GitRepositoryStatus
+			manager.Fetcher.GitRepositoryStatus = state.Fetcher.GetGitRepositoryStatus()
 		}
 	case *protobuf.Event_EvalStartedType:
 		manager.Builder.IsEvaluating = true

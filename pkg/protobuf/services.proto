@@ -241,7 +241,9 @@ message Confirmer {
 
 message Fetcher {
   google.protobuf.BoolValue is_fetching = 1;
-  GitRepositoryStatus git_repository_status = 2;
+  oneof status {
+    GitRepositoryStatus git_repository_status = 2;
+  }
 }
 
 message Branch {

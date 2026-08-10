@@ -27,17 +27,20 @@ func longStatus(status *pb.State) {
 		fmt.Printf("  Is suspended: yes\n")
 	}
 	fmt.Printf("  Fetcher\n")
-	if status.Fetcher.GitRepositoryStatus != nil && status.Fetcher.GitRepositoryStatus.SelectedCommitShouldBeSigned.GetValue() {
-		if status.Fetcher.GitRepositoryStatus.SelectedCommitSigned.GetValue() {
-			fmt.Printf("    Commit %s signed by %s\n", status.Fetcher.GitRepositoryStatus.SelectedCommitId, status.Fetcher.GitRepositoryStatus.SelectedCommitSignedBy)
+	gitRepoStatus := status.Fetcher.GetGitRepositoryStatus()
+	if gitRepoStatus != nil && gitRepoStatus.SelectedCommitShouldBeSigned.GetValue() {
+		if gitRepoStatus.SelectedCommitSigned.GetValue() {
+			fmt.Printf("    Commit %s signed by %s\n", gitRepoStatus.SelectedCommitId, gitRepoStatus.SelectedCommitSignedBy)
 		} else {
-			fmt.Printf("    Commit %s is not signed while it should be\n", status.Fetcher.GitRepositoryStatus.SelectedCommitId)
+			fmt.Printf("    Commit %s is not signed while it should be\n", gitRepoStatus.SelectedCommitId)
 		}
 	}
-	for _, r := range status.Fetcher.GitRepositoryStatus.Remotes {
-		fmt.Printf("    Remote %s %s fetched %s\n",
-			r.Name, r.Url, humanize.Time(r.FetchedAt.AsTime()),
-		)
+	if gitRepoStatus != nil {
+		for _, r := range gitRepoStatus.Remotes {
+			fmt.Printf("    Remote %s %s fetched %s\n",
+				r.Name, r.Url, humanize.Time(r.FetchedAt.AsTime()),
+			)
+		}
 	}
 	fmt.Printf("  Builder\n")
 	if status.Builder.Generation != nil {
