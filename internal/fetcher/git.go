@@ -15,7 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-type Fetcher struct {
+type GitFetcher struct {
 	isFetching       atomic.Bool
 	repositoryStatus *protobuf.GitRepositoryStatus
 	mu               sync.RWMutex
@@ -24,8 +24,8 @@ type Fetcher struct {
 	broker           *broker.Broker
 }
 
-func NewFetcher(repo repository.Repository, broker *broker.Broker) *Fetcher {
-	f := &Fetcher{
+func NewGitFetcher(repo repository.Repository, broker *broker.Broker) *GitFetcher {
+	f := &GitFetcher{
 		repo:          repo,
 		broker:        broker,
 		submitRemotes: make(chan []string),
@@ -34,11 +34,11 @@ func NewFetcher(repo repository.Repository, broker *broker.Broker) *Fetcher {
 	return f
 }
 
-func (f *Fetcher) IsFetching() bool {
+func (f *GitFetcher) IsFetching() bool {
 	return f.isFetching.Load()
 }
 
-func (f *Fetcher) TriggerFetch(remotes []string) {
+func (f *GitFetcher) TriggerFetch(remotes []string) {
 	f.submitRemotes <- remotes
 }
 
@@ -52,17 +52,17 @@ type State struct {
 	RepositoryStatus *protobuf.GitRepositoryStatus
 }
 
-func (f *Fetcher) GetState() *protobuf.Fetcher {
+func (f *GitFetcher) GetState() *protobuf.Fetcher {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return &protobuf.Fetcher{
-		IsFetching:       wrapperspb.Bool(f.isFetching.Load()),
+		IsFetching:          wrapperspb.Bool(f.isFetching.Load()),
 		GitRepositoryStatus: f.repo.GetRepositoryStatus(),
 	}
 }
 
-func (f *Fetcher) Start(ctx context.Context) {
-	logrus.Info("fetcher: starting")
+func (f *GitFetcher) Start(ctx context.Context) {
+	logrus.Info("fetcher git: starting")
 	go func() {
 		remotes := make([]string, 0)
 		var workerRepositoryStatusCh chan *protobuf.GitRepositoryStatus

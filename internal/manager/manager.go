@@ -42,7 +42,7 @@ type Manager struct {
 	prometheus      prometheus.Prometheus
 	storage         *store.Store
 	scheduler       scheduler.Scheduler
-	Fetcher         *fetcher.Fetcher
+	Fetcher         *fetcher.GitFetcher
 	Builder         *builder.Builder
 	deployer        *deployer.Deployer
 	executor        executor.Executor
@@ -60,7 +60,7 @@ type Manager struct {
 func New(s *store.Store,
 	p prometheus.Prometheus,
 	sched scheduler.Scheduler,
-	fetcher *fetcher.Fetcher,
+	fetcher *fetcher.GitFetcher,
 	builder *builder.Builder,
 	deployer *deployer.Deployer,
 	machineId string,
@@ -89,7 +89,7 @@ func New(s *store.Store,
 		DeployConfirmer:         deployConfirmer,
 		broker:                  broker,
 		configurationOperations: configurationOperations,
-		brokerEvents:           broker.Subscribe(),
+		brokerEvents:            broker.Subscribe(),
 	}
 	return m
 }
