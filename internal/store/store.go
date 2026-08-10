@@ -172,26 +172,26 @@ func (s *Store) migrateGenerationsToSource() {
 		// Only migrate if Source is not already set
 		if g.Source == nil {
 			// Check if any of the old fields have values
-			if g.RepositorySubdir != "" || g.SystemAttr != "" || g.Hostname != "" ||
-				g.SelectedRemoteUrl != "" || g.SelectedRemoteName != "" || g.SelectedBranchName != "" ||
-				g.SelectedCommitId != "" || g.SelectedCommitMsg != "" || g.MainCommitId != "" ||
-				g.MainRemoteName != "" || g.MainBranchName != "" {
+			if g.RepositorySubdir != "" || g.SystemAttr != "" || g.Hostname != "" || // nolint
+				g.SelectedRemoteUrl != "" || g.SelectedRemoteName != "" || g.SelectedBranchName != "" || // nolint
+				g.SelectedCommitId != "" || g.SelectedCommitMsg != "" || g.MainCommitId != "" || // nolint
+				g.MainRemoteName != "" || g.MainBranchName != "" { // nolint
 
 				g.Source = &protobuf.Source{
 					Source: &protobuf.Source_Git{
 						Git: &protobuf.Git{
-							RepositorySubdir:        g.RepositorySubdir,
-							SystemAttr:              g.SystemAttr,
-							Hostname:                g.Hostname,
-							SelectedRemoteUrl:       g.SelectedRemoteUrl,
-							SelectedRemoteName:      g.SelectedRemoteName,
-							SelectedBranchName:      g.SelectedBranchName,
-							SelectedCommitId:        g.SelectedCommitId,
-							SelectedCommitMsg:       g.SelectedCommitMsg,
-							SelectedBranchIsTesting: g.SelectedBranchIsTesting,
-							MainCommitId:            g.MainCommitId,
-							MainRemoteName:          g.MainRemoteName,
-							MainBranchName:          g.MainBranchName,
+							RepositorySubdir:        g.RepositorySubdir,        // nolint
+							SystemAttr:              g.SystemAttr,              // nolint
+							Hostname:                g.Hostname,                // nolint
+							SelectedRemoteUrl:       g.SelectedRemoteUrl,       // nolint
+							SelectedRemoteName:      g.SelectedRemoteName,      // nolint
+							SelectedBranchName:      g.SelectedBranchName,      // nolint
+							SelectedCommitId:        g.SelectedCommitId,        // nolint
+							SelectedCommitMsg:       g.SelectedCommitMsg,       // nolint
+							SelectedBranchIsTesting: g.SelectedBranchIsTesting, // nolint
+							MainCommitId:            g.MainCommitId,            // nolint
+							MainRemoteName:          g.MainRemoteName,          // nolint
+							MainBranchName:          g.MainBranchName,          // nolint
 						},
 					},
 				}
@@ -204,26 +204,26 @@ func (s *Store) migrateGenerationsToSource() {
 	for _, d := range s.persisted.Deployments {
 		if d.Generation != nil && d.Generation.Source == nil {
 			// Check if any of the old fields have values
-			if d.Generation.RepositorySubdir != "" || d.Generation.SystemAttr != "" || d.Generation.Hostname != "" ||
-				d.Generation.SelectedRemoteUrl != "" || d.Generation.SelectedRemoteName != "" || d.Generation.SelectedBranchName != "" ||
-				d.Generation.SelectedCommitId != "" || d.Generation.SelectedCommitMsg != "" || d.Generation.MainCommitId != "" ||
-				d.Generation.MainRemoteName != "" || d.Generation.MainBranchName != "" {
+			if d.Generation.RepositorySubdir != "" || d.Generation.SystemAttr != "" || d.Generation.Hostname != "" || // nolint
+				d.Generation.SelectedRemoteUrl != "" || d.Generation.SelectedRemoteName != "" || d.Generation.SelectedBranchName != "" || // nolint
+				d.Generation.SelectedCommitId != "" || d.Generation.SelectedCommitMsg != "" || d.Generation.MainCommitId != "" || // nolint
+				d.Generation.MainRemoteName != "" || d.Generation.MainBranchName != "" { // nolint
 
 				d.Generation.Source = &protobuf.Source{
 					Source: &protobuf.Source_Git{
 						Git: &protobuf.Git{
-							RepositorySubdir:        d.Generation.RepositorySubdir,
-							SystemAttr:              d.Generation.SystemAttr,
-							Hostname:                d.Generation.Hostname,
-							SelectedRemoteUrl:       d.Generation.SelectedRemoteUrl,
-							SelectedRemoteName:      d.Generation.SelectedRemoteName,
-							SelectedBranchName:      d.Generation.SelectedBranchName,
-							SelectedCommitId:        d.Generation.SelectedCommitId,
-							SelectedCommitMsg:       d.Generation.SelectedCommitMsg,
-							SelectedBranchIsTesting: d.Generation.SelectedBranchIsTesting,
-							MainCommitId:            d.Generation.MainCommitId,
-							MainRemoteName:          d.Generation.MainRemoteName,
-							MainBranchName:          d.Generation.MainBranchName,
+							RepositorySubdir:        d.Generation.RepositorySubdir,        // nolint
+							SystemAttr:              d.Generation.SystemAttr,              // nolint
+							Hostname:                d.Generation.Hostname,                // nolint
+							SelectedRemoteUrl:       d.Generation.SelectedRemoteUrl,       // nolint
+							SelectedRemoteName:      d.Generation.SelectedRemoteName,      // nolint
+							SelectedBranchName:      d.Generation.SelectedBranchName,      // nolint
+							SelectedCommitId:        d.Generation.SelectedCommitId,        // nolint
+							SelectedCommitMsg:       d.Generation.SelectedCommitMsg,       // nolint
+							SelectedBranchIsTesting: d.Generation.SelectedBranchIsTesting, // nolint
+							MainCommitId:            d.Generation.MainCommitId,            // nolint
+							MainRemoteName:          d.Generation.MainRemoteName,          // nolint
+							MainBranchName:          d.Generation.MainBranchName,          // nolint
 						},
 					},
 				}

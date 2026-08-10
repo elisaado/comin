@@ -25,7 +25,7 @@ func New(repositoryType, repositoryPath string, submodules bool) (e Executor, er
 	case "nix":
 		return NewGitNixNixOS(repositoryPath, submodules)
 	}
-	return e, fmt.Errorf("Failed to create the executor: %s", err)
+	return e, fmt.Errorf("failed to create the executor: %s", err)
 }
 
 // Executor contains the function used by comin to actually do actions
