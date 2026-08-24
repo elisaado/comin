@@ -42,7 +42,7 @@ type Manager struct {
 	prometheus      prometheus.Prometheus
 	storage         *store.Store
 	scheduler       scheduler.Scheduler
-	Fetcher         *fetcher.Fetcher
+	Fetcher         *fetcher.GitFetcher
 	Builder         *builder.Builder
 	deployer        *deployer.Deployer
 	executor        executor.Executor
@@ -53,13 +53,14 @@ type Manager struct {
 
 	isSuspended bool
 
-	broker *broker.Broker
+	broker       *broker.Broker
+	brokerEvents chan *protobuf.Event
 }
 
 func New(s *store.Store,
 	p prometheus.Prometheus,
 	sched scheduler.Scheduler,
-	fetcher *fetcher.Fetcher,
+	fetcher *fetcher.GitFetcher,
 	builder *builder.Builder,
 	deployer *deployer.Deployer,
 	machineId string,
@@ -88,6 +89,7 @@ func New(s *store.Store,
 		DeployConfirmer:         deployConfirmer,
 		broker:                  broker,
 		configurationOperations: configurationOperations,
+		brokerEvents:            broker.Subscribe(),
 	}
 	return m
 }
@@ -117,7 +119,7 @@ func (m *Manager) DeploymentLatestSubmit(operation string) error {
 	}
 	// If no operation is provided, use default based on branch type
 	if operation == "" {
-		if latest.Generation.SelectedBranchIsTesting != nil && latest.Generation.SelectedBranchIsTesting.Value {
+		if latest.Generation.Source != nil && latest.Generation.Source.GetGit() != nil && latest.Generation.Source.GetGit().SelectedBranchIsTesting != nil && latest.Generation.Source.GetGit().SelectedBranchIsTesting.Value {
 			operation = "test"
 		} else {
 			operation = "switch"
@@ -161,15 +163,22 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 	go func() {
 		for {
 			select {
-			case rs := <-m.Fetcher.RepositoryStatusCh:
-				if !rs.SelectedCommitShouldBeSigned.GetValue() || rs.SelectedCommitSigned.GetValue() {
-					logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
-					err := m.Builder.Eval(ctx, rs)
-					if err != nil {
-						logrus.Error(err)
+			case e := <-m.brokerEvents:
+				if fetched := e.GetFetched(); fetched != nil {
+					if !fetched.Updated {
+						continue
 					}
-				} else {
-					logrus.Infof("manager: the commit %s is not evaluated because it is not signed", rs.SelectedCommitId)
+					rs := fetched.GetGitRepositoryStatus()
+					if fetched.Verified {
+						logrus.Infof("manager: a generation is evaluating for commit %s", rs.SelectedCommitId)
+						generation := m.storage.NewGeneration(m.Builder.GetHostname(), m.Builder.GetRepositoryDir(), m.Builder.GetSystemAttr(), rs)
+						err := m.Builder.Eval(ctx, &generation)
+						if err != nil {
+							logrus.Error(err)
+						}
+					} else {
+						logrus.Infof("manager: the commit %s is not evaluated because it is not signed", rs.SelectedCommitId)
+					}
 				}
 			case generationUUID := <-m.Builder.EvaluationDone:
 				generation, err := m.storage.GenerationGet(generationUUID)
@@ -196,8 +205,9 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 					continue
 				}
 				if generation.BuildErr == "" {
-					logrus.Infof("manager: a generation is available for deployment with commit %s", generation.SelectedCommitId)
-					operation := m.getOperationFromConfigurationOperations(generation.SelectedRemoteName, generation.SelectedBranchName)
+					git := generation.Source.GetGit()
+					logrus.Infof("manager: a generation is available for deployment with commit %s", git.SelectedCommitId)
+					operation := m.getOperationFromConfigurationOperations(git.SelectedRemoteName, git.SelectedBranchName)
 					if !m.deployer.IsAlreadyDeployed(&generation, operation) {
 						m.DeployConfirmer.Submit(generationUUID)
 					}
@@ -210,7 +220,8 @@ func (m *Manager) FetchAndBuild(ctx context.Context) {
 					logrus.Error(err)
 					continue
 				}
-				operation := m.getOperationFromConfigurationOperations(generation.SelectedRemoteName, generation.SelectedBranchName)
+				git := generation.Source.GetGit()
+				operation := m.getOperationFromConfigurationOperations(git.SelectedRemoteName, git.SelectedBranchName)
 				reason := fmt.Sprintf("The generation %s needs to be deployed", generationUUID)
 				m.deployer.Submit(&generation, operation, false, reason)
 			}

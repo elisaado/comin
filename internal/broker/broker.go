@@ -12,40 +12,36 @@ import (
 )
 
 type Broker struct {
-	stopCh    chan struct{}
-	publishCh chan *protobuf.Event
-	subCh     chan chan *protobuf.Event
-	unsubCh   chan chan *protobuf.Event
+	stopCh      chan struct{}
+	publishCh   chan *protobuf.Event
+	subscribers map[chan *protobuf.Event]struct{}
+	mu          sync.RWMutex
 }
 
 func New() *Broker {
 	return &Broker{
-		stopCh:    make(chan struct{}),
-		publishCh: make(chan *protobuf.Event, 1),
-		subCh:     make(chan chan *protobuf.Event, 1),
-		unsubCh:   make(chan chan *protobuf.Event, 1),
+		stopCh:      make(chan struct{}),
+		publishCh:   make(chan *protobuf.Event, 1),
+		subscribers: make(map[chan *protobuf.Event]struct{}),
 	}
 }
 
 func (b *Broker) Start() {
 	go func() {
-		subs := map[chan *protobuf.Event]struct{}{}
 		for {
 			select {
 			case <-b.stopCh:
 				return
-			case msgCh := <-b.subCh:
-				subs[msgCh] = struct{}{}
-			case msgCh := <-b.unsubCh:
-				delete(subs, msgCh)
 			case msg := <-b.publishCh:
-				for msgCh := range subs {
+				b.mu.RLock()
+				for msgCh := range b.subscribers {
 					// msgCh is buffered, use non-blocking send to protect the broker:
 					select {
 					case msgCh <- msg:
 					default:
 					}
 				}
+				b.mu.RUnlock()
 			}
 		}
 	}()
@@ -57,12 +53,16 @@ func (b *Broker) Stop() {
 
 func (b *Broker) Subscribe() chan *protobuf.Event {
 	msgCh := make(chan *protobuf.Event, 5)
-	b.subCh <- msgCh
+	b.mu.Lock()
+	b.subscribers[msgCh] = struct{}{}
+	b.mu.Unlock()
 	return msgCh
 }
 
 func (b *Broker) Unsubscribe(msgCh chan *protobuf.Event) {
-	b.unsubCh <- msgCh
+	b.mu.Lock()
+	delete(b.subscribers, msgCh)
+	b.mu.Unlock()
 }
 
 func (b *Broker) Publish(msg *protobuf.Event) {

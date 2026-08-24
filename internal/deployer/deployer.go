@@ -97,8 +97,11 @@ func showDeployment(padding string, d *protobuf.Deployment) {
 		fmt.Printf("%sProfilePath %s\n", padding, d.ProfilePath)
 	}
 	fmt.Printf("%sGeneration %s\n", padding, d.Generation.Uuid)
-	fmt.Printf("%sCommit ID %s from %s/%s\n", padding, d.Generation.SelectedCommitId, d.Generation.SelectedRemoteName, d.Generation.SelectedBranchName)
-	fmt.Printf("%sCommit message %s\n", padding, strings.Trim(d.Generation.SelectedCommitMsg, "\n"))
+	if d.Generation.Source != nil && d.Generation.Source.GetGit() != nil {
+		git := d.Generation.Source.GetGit()
+		fmt.Printf("%sCommit ID %s from %s/%s\n", padding, git.SelectedCommitId, git.SelectedRemoteName, git.SelectedBranchName)
+		fmt.Printf("%sCommit message %s\n", padding, strings.Trim(git.SelectedCommitMsg, "\n"))
+	}
 	fmt.Printf("%sOutpath %s\n", padding, d.Generation.OutPath)
 }
 

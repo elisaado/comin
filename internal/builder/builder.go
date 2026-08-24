@@ -108,11 +108,28 @@ func (b *Builder) State() *protobuf.Builder {
 		Generation:     generation,
 		GenerationUuid: generationUUID,
 		IsSuspended:    wrapperspb.Bool(b.isSuspended),
+		RepositoryPath: b.repositoryPath,
 	}
 }
 
 func (b *Builder) IsEvaluating() bool {
 	return b.isEvaluating.Load()
+}
+
+func (b *Builder) GetHostname() string {
+	return b.hostname
+}
+
+func (b *Builder) GetRepositoryPath() string {
+	return b.repositoryPath
+}
+
+func (b *Builder) GetRepositoryDir() string {
+	return b.repositoryDir
+}
+
+func (b *Builder) GetSystemAttr() string {
+	return b.systemAttr
 }
 
 func (b *Builder) stopEval() {
@@ -147,13 +164,7 @@ func (b *Builder) Stop() {
 }
 
 type Evaluator struct {
-	repositoryPath  string
-	repostorySubdir string
-	systemAttr      string
-	commitId        string
-	hostname        string
-	submodules      bool
-
+	source     *protobuf.Source
 	evalFunc executor.EvalFunc
 
 	drvPath   string
@@ -165,7 +176,7 @@ type Evaluator struct {
 }
 
 func (r *Evaluator) Run(ctx context.Context) (err error) {
-	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.repositoryPath, r.repostorySubdir, r.commitId, r.systemAttr, r.hostname, r.submodules, r.stdout, r.stderr)
+	r.drvPath, r.outPath, r.machineId, err = r.evalFunc(ctx, r.source, r.stdout, r.stderr)
 	return err
 }
 
@@ -187,7 +198,7 @@ func (r *Buildator) Run(ctx context.Context) (err error) {
 // Nix store, it then consider the build is done. In this case, it
 // doesn't notify for the end of the evaluation but for the end of the
 // build.
-func (b *Builder) Eval(ctx context.Context, rs *protobuf.RepositoryStatus) error {
+func (b *Builder) Eval(ctx context.Context, generation *protobuf.Generation) error {
 	// This is to prempt the builder since we don't need to allow
 	// several evaluation in parallel
 	b.Stop()
@@ -195,25 +206,18 @@ func (b *Builder) Eval(ctx context.Context, rs *protobuf.RepositoryStatus) error
 	defer b.mu.Unlock()
 	b.isEvaluating.Store(true)
 
-	g := b.store.NewGeneration(b.hostname, b.repositoryPath, b.repositoryDir, b.systemAttr, rs)
-	if err := b.store.GenerationEvalStarted(g.Uuid); err != nil {
+	if err := b.store.GenerationEvalStarted(generation.Uuid); err != nil {
 		return err
 	}
-	b.GenerationUuid = g.Uuid
+	b.GenerationUuid = generation.Uuid
 
-	stdout, stderr := b.broker.GetLogger("evaluation", g.Uuid)
+	stdout, stderr := b.broker.GetLogger("evaluation", generation.Uuid)
 
 	evaluator := &Evaluator{
-		hostname:        b.hostname,
-		repositoryPath:  g.RepositoryPath,
-		repostorySubdir: g.RepositorySubdir,
-		systemAttr:      g.SystemAttr,
-		submodules:      b.submodules,
-
-		commitId: g.SelectedCommitId,
+		source:     generation.Source,
 		evalFunc: b.executor.Eval,
-		stdout:   stdout,
-		stderr:   stderr,
+		stdout:     stdout,
+		stderr:     stderr,
 	}
 	b.evaluator = NewExec(evaluator, b.evalTimeout)
 
@@ -232,7 +236,7 @@ func (b *Builder) Eval(ctx context.Context, rs *protobuf.RepositoryStatus) error
 		b.mu.Lock()
 		defer b.mu.Unlock()
 		if err := b.store.GenerationEvalFinished(
-			g.Uuid,
+			generation.Uuid,
 			evaluator.drvPath,
 			evaluator.outPath,
 			evaluator.machineId,
@@ -243,20 +247,20 @@ func (b *Builder) Eval(ctx context.Context, rs *protobuf.RepositoryStatus) error
 
 		b.isEvaluating.Store(false)
 		if b.executor.IsStorePathExist(evaluator.outPath) {
-			if err := b.store.GenerationBuildStart(g.Uuid, BuildReasonAlreadyBuilt); err != nil {
+			if err := b.store.GenerationBuildStart(generation.Uuid, BuildReasonAlreadyBuilt); err != nil {
 				logrus.Errorf("builder: %s", err)
 			}
-			if err := b.store.GenerationBuildFinished(g.Uuid, nil); err != nil {
+			if err := b.store.GenerationBuildFinished(generation.Uuid, nil); err != nil {
 				logrus.Errorf("builder: %s", err)
 			}
 			select {
-			case b.BuildDone <- g.Uuid:
+			case b.BuildDone <- generation.Uuid:
 			default:
 			}
 
 		} else {
 			select {
-			case b.EvaluationDone <- g.Uuid:
+			case b.EvaluationDone <- generation.Uuid:
 			default:
 			}
 		}

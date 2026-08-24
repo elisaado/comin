@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path"
-	"runtime"
 	"time"
 
 	brokerPkg "github.com/nlewo/comin/internal/broker"
@@ -23,6 +22,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+// getGitFromGeneration is a helper function to safely extract Git source from a Generation
+func getGitFromGeneration(g *protobuf.Generation) *protobuf.Git {
+	if g != nil && g.Source != nil {
+		return g.Source.GetGit()
+	}
+	return &protobuf.Git{}
+}
 
 var configFilepath string
 
@@ -54,18 +61,10 @@ var runCmd = &cobra.Command{
 		}
 
 		var executor executorPkg.Executor
-		switch cfg.RepositoryType {
-		case "flake":
-			executor, err = executorPkg.NewNixOSFlake()
-			if runtime.GOOS == "darwin" {
-				executor, err = executorPkg.NewNixDarwinFlake()
-			}
-		case "nix":
-			executor, err = executorPkg.NewNixOSNix()
-		}
+		executor, err = executorPkg.New(cfg.RepositoryType, gitConfig.Path, gitConfig.Submodules)
 		if err != nil {
-			logrus.Errorf("Failed to create the executor: %s", err)
-			return
+			logrus.Error(err)
+			os.Exit(1)
 		}
 
 		machineId, err := executor.ReadMachineId()
@@ -94,9 +93,10 @@ var runCmd = &cobra.Command{
 		var mainCommitId string
 		var lastDeployment *protobuf.Deployment
 		if ok, ld := store.LastDeployment(); ok {
-			mainCommitId = ld.Generation.MainCommitId
+			git := getGitFromGeneration(ld.Generation)
+			mainCommitId = git.MainCommitId
 			lastDeployment = ld
-			metrics.SetDeploymentInfo(ld.Generation.SelectedCommitId, ld.Status)
+			metrics.SetDeploymentInfo(git.SelectedCommitId, ld.Status)
 		}
 		repository, err := repository.New(gitConfig, mainCommitId, metrics)
 		if err != nil {
@@ -104,7 +104,7 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fetcher := fetcher.NewFetcher(repository, broker)
+		fetcher := fetcher.NewGitFetcher(repository, broker)
 		fetcher.Start(cmd.Context())
 		sched := scheduler.New()
 		sched.FetchRemotes(fetcher, cfg.Remotes)

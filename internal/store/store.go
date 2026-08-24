@@ -157,7 +157,80 @@ func (s *Store) Load() (err error) {
 
 	s.updateDataDeployments(booted, current, nil)
 
+	// Migrate existing Generation objects to use Source.Git
+	s.migrateGenerationsToSource()
+
 	return
+}
+
+// migrateGenerationsToSource converts existing Generation objects that have
+// attributes directly to the new format with Source.Git
+// TODO: remove this migration path in release v0.17.0
+func (s *Store) migrateGenerationsToSource() {
+	// Migrate generations in the Generations list
+	for _, g := range s.persisted.Generations {
+		// Only migrate if Source is not already set
+		if g.Source == nil {
+			// Check if any of the old fields have values
+			if g.RepositorySubdir != "" || g.SystemAttr != "" || g.Hostname != "" || // nolint
+				g.SelectedRemoteUrl != "" || g.SelectedRemoteName != "" || g.SelectedBranchName != "" || // nolint
+				g.SelectedCommitId != "" || g.SelectedCommitMsg != "" || g.MainCommitId != "" || // nolint
+				g.MainRemoteName != "" || g.MainBranchName != "" { // nolint
+
+				g.Source = &protobuf.Source{
+					Source: &protobuf.Source_Git{
+						Git: &protobuf.Git{
+							RepositorySubdir:        g.RepositorySubdir,        // nolint
+							SystemAttr:              g.SystemAttr,              // nolint
+							Hostname:                g.Hostname,                // nolint
+							SelectedRemoteUrl:       g.SelectedRemoteUrl,       // nolint
+							SelectedRemoteName:      g.SelectedRemoteName,      // nolint
+							SelectedBranchName:      g.SelectedBranchName,      // nolint
+							SelectedCommitId:        g.SelectedCommitId,        // nolint
+							SelectedCommitMsg:       g.SelectedCommitMsg,       // nolint
+							SelectedBranchIsTesting: g.SelectedBranchIsTesting, // nolint
+							MainCommitId:            g.MainCommitId,            // nolint
+							MainRemoteName:          g.MainRemoteName,          // nolint
+							MainBranchName:          g.MainBranchName,          // nolint
+						},
+					},
+				}
+				logrus.Infof("store: migrated generation %s to use Source.Git", g.Uuid)
+			}
+		}
+	}
+
+	// Migrate generations in Deployments
+	for _, d := range s.persisted.Deployments {
+		if d.Generation != nil && d.Generation.Source == nil {
+			// Check if any of the old fields have values
+			if d.Generation.RepositorySubdir != "" || d.Generation.SystemAttr != "" || d.Generation.Hostname != "" || // nolint
+				d.Generation.SelectedRemoteUrl != "" || d.Generation.SelectedRemoteName != "" || d.Generation.SelectedBranchName != "" || // nolint
+				d.Generation.SelectedCommitId != "" || d.Generation.SelectedCommitMsg != "" || d.Generation.MainCommitId != "" || // nolint
+				d.Generation.MainRemoteName != "" || d.Generation.MainBranchName != "" { // nolint
+
+				d.Generation.Source = &protobuf.Source{
+					Source: &protobuf.Source_Git{
+						Git: &protobuf.Git{
+							RepositorySubdir:        d.Generation.RepositorySubdir,        // nolint
+							SystemAttr:              d.Generation.SystemAttr,              // nolint
+							Hostname:                d.Generation.Hostname,                // nolint
+							SelectedRemoteUrl:       d.Generation.SelectedRemoteUrl,       // nolint
+							SelectedRemoteName:      d.Generation.SelectedRemoteName,      // nolint
+							SelectedBranchName:      d.Generation.SelectedBranchName,      // nolint
+							SelectedCommitId:        d.Generation.SelectedCommitId,        // nolint
+							SelectedCommitMsg:       d.Generation.SelectedCommitMsg,       // nolint
+							SelectedBranchIsTesting: d.Generation.SelectedBranchIsTesting, // nolint
+							MainCommitId:            d.Generation.MainCommitId,            // nolint
+							MainRemoteName:          d.Generation.MainRemoteName,          // nolint
+							MainBranchName:          d.Generation.MainBranchName,          // nolint
+						},
+					},
+				}
+				logrus.Infof("store: migrated deployment generation %s to use Source.Git", d.Generation.Uuid)
+			}
+		}
+	}
 }
 
 func (s *Store) Commit() {

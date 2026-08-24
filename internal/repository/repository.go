@@ -22,16 +22,16 @@ import (
 type repository struct {
 	Repository        *git.Repository
 	GitConfig         types.GitConfig
-	RepositoryStatus  *pb.RepositoryStatus
+	RepositoryStatus  *pb.GitRepositoryStatus
 	prometheus        prometheus.Prometheus
 	gpgPubliKeys      []string
 	sshAllowedSigners []sshAllowedSigner
 }
 
 type Repository interface {
-	FetchAndUpdate(ctx context.Context, remoteNames []string) (rsCh chan *pb.RepositoryStatus)
+	FetchAndUpdate(ctx context.Context, remoteNames []string) (rsCh chan *pb.GitRepositoryStatus)
 	// GetRepositoryStatus is currently not thread safe and is only used to initialize the fetcher
-	GetRepositoryStatus() *pb.RepositoryStatus
+	GetRepositoryStatus() *pb.GitRepositoryStatus
 }
 
 // repositoryStatus is the last saved repositoryStatus
@@ -75,17 +75,17 @@ func New(config types.GitConfig, mainCommitId string, prometheus prometheus.Prom
 	if err != nil {
 		return
 	}
-	r.RepositoryStatus = NewRepositoryStatus(config, mainCommitId)
+	r.RepositoryStatus = NewGitRepositoryStatus(config, mainCommitId)
 
 	return
 }
 
-func (r *repository) GetRepositoryStatus() *pb.RepositoryStatus {
+func (r *repository) GetRepositoryStatus() *pb.GitRepositoryStatus {
 	return proto.CloneOf(r.RepositoryStatus)
 }
 
-func (r *repository) FetchAndUpdate(ctx context.Context, remoteNames []string) (rsCh chan *pb.RepositoryStatus) {
-	rsCh = make(chan *pb.RepositoryStatus)
+func (r *repository) FetchAndUpdate(ctx context.Context, remoteNames []string) (rsCh chan *pb.GitRepositoryStatus) {
+	rsCh = make(chan *pb.GitRepositoryStatus)
 	go func() {
 		// FIXME: switch to the FetchContext to clean resource up on timeout
 		r.Fetch(remoteNames)

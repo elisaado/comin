@@ -5,12 +5,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with Darwin configuration
-	executor, err := NewNixFlakeExecutor("darwinConfigurations")
+	executor, err := NewGitNixFlake("darwinConfigurations", "/test/path", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "darwinConfigurations", executor.systemAttr)
@@ -18,7 +19,7 @@ func TestNixExecutorWithDarwinConfiguration(t *testing.T) {
 
 func TestNixExecutorWithNixOSConfiguration(t *testing.T) {
 	// Test creating a NixExecutor with NixOS configuration
-	executor, err := NewNixFlakeExecutor("nixosConfigurations")
+	executor, err := NewGitNixFlake("nixosConfigurations", "/test/path", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, executor)
 	assert.Equal(t, "nixosConfigurations", executor.systemAttr)
@@ -26,34 +27,46 @@ func TestNixExecutorWithNixOSConfiguration(t *testing.T) {
 
 func TestNixExecutorEval(t *testing.T) {
 	tests := []struct {
-		name             string
-		systemAttr       string
-		repositoryPath   string
-		repositorySubdir string
-		commitId         string
-		hostname         string
+		name           string
+		systemAttr     string
+		repositoryPath string
+		source         *protobuf.Source
 	}{
 		{
-			name:             "Eval with NixOS configuration",
-			systemAttr:       "nixosConfigurations",
-			repositoryPath:   "/non-existent",
-			repositorySubdir: ".",
-			commitId:         "non-existent-commit-id",
-			hostname:         "test-host",
+			name:           "Eval with NixOS configuration",
+			systemAttr:     "nixosConfigurations",
+			repositoryPath: "/non-existent",
+			source: &protobuf.Source{
+				Source: &protobuf.Source_Git{
+					Git: &protobuf.Git{
+						RepositorySubdir: ".",
+						SystemAttr:       "nixosConfigurations",
+						Hostname:         "test-host",
+						SelectedCommitId:  "non-existent-commit-id",
+					},
+				},
+			},
 		},
 		{
-			name:             "Eval with Darwin configuration",
-			systemAttr:       "darwinConfigurations",
-			repositoryPath:   "/non-existent",
-			repositorySubdir: ".",
-			commitId:         "non-existent-commit-id",
-			hostname:         "test-host",
+			name:           "Eval with Darwin configuration",
+			systemAttr:     "darwinConfigurations",
+			repositoryPath: "/non-existent",
+			source: &protobuf.Source{
+				Source: &protobuf.Source_Git{
+					Git: &protobuf.Git{
+						RepositorySubdir: ".",
+						SystemAttr:       "darwinConfigurations",
+						Hostname:         "test-host",
+						SelectedCommitId:  "non-existent-commit-id",
+					},
+				},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, tt.repositoryPath, false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -61,7 +74,7 @@ func TestNixExecutorEval(t *testing.T) {
 			// Test that Eval doesn't panic and handles parameters correctly
 			// This will error in test environment since nix commands will fail,
 			// but we're testing the code path and parameter handling
-			_, _, _, err = executor.Eval(ctx, tt.repositoryPath, tt.repositorySubdir, tt.commitId, tt.systemAttr, tt.hostname, false, os.Stdout, os.Stderr)
+			_, _, _, err = executor.Eval(ctx, tt.source, os.Stdout, os.Stderr)
 			t.Logf("Eval with %s returned error: %v (expected in test environment)", tt.systemAttr, err)
 		})
 	}
@@ -90,7 +103,7 @@ func TestNixExecutorShowDerivation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()
@@ -122,7 +135,7 @@ func TestNixExecutorList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			// Test that List doesn't panic and handles configuration attribute correctly
@@ -155,7 +168,7 @@ func TestNixExecutorDeploy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor, err := NewNixFlakeExecutor(tt.systemAttr)
+			executor, err := NewGitNixFlake(tt.systemAttr, "/test/path", false)
 			assert.NoError(t, err)
 
 			ctx := context.Background()

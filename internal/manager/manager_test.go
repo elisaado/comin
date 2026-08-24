@@ -13,10 +13,10 @@ import (
 	"github.com/nlewo/comin/internal/executor"
 	"github.com/nlewo/comin/internal/fetcher"
 	"github.com/nlewo/comin/internal/prometheus"
-	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/nlewo/comin/internal/scheduler"
 	"github.com/nlewo/comin/internal/store"
 	"github.com/nlewo/comin/internal/utils"
+	"github.com/nlewo/comin/pkg/protobuf"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,7 +54,7 @@ func (n ExecutorMock) IsStorePathExist(storePath string) bool {
 func (n ExecutorMock) Deploy(ctx context.Context, outPath, operation string, profilePaths []string, stdout, stderr io.WriteCloser) (needToRestartComin bool, profilePath string, err error) {
 	return false, "", nil
 }
-func (n ExecutorMock) Eval(ctx context.Context, repositoryPath, repositorySubdir, commitId, systemAttr, hostname string, submodules bool, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
+func (n ExecutorMock) Eval(ctx context.Context, source *protobuf.Source, stdout, stderr io.WriteCloser) (drvPath string, outPath string, machineId string, err error) {
 	ok := <-n.evalOk
 	if ok {
 		return "drv-path", "out-path", n.machineId, nil
@@ -87,7 +87,7 @@ func TestBuild(t *testing.T) {
 	tmp := t.TempDir()
 	bk := broker.New()
 	bk.Start()
-	f := fetcher.NewFetcher(r, bk)
+	f := fetcher.NewGitFetcher(r, bk)
 	f.Start(t.Context())
 	s, _ := store.New(bk, tmp+"/state.json", tmp+"/gcroots", 1, 1, 1)
 	eMock := NewExecutorMock("")
@@ -96,7 +96,7 @@ func TestBuild(t *testing.T) {
 		return false, "profile-path", nil
 	}
 	d := deployer.New(s, deployFunc, nil, "", bk)
-	e, _ := executor.NewNixOSFlake()
+	e, _ := executor.NewGitNixFlakeNixOS("", false)
 	bc := NewConfirmer(bk, Without, 0, "")
 	bc.Start()
 	dc := NewConfirmer(bk, Without, 0, "")
@@ -109,7 +109,7 @@ func TestBuild(t *testing.T) {
 
 	commitId := "id-1"
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: commitId,
 	}
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -129,7 +129,7 @@ func TestBuild(t *testing.T) {
 
 	commitId = "id-2"
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: commitId,
 	}
 	// This simulates the success of an evaluation
@@ -154,7 +154,7 @@ func TestBuild(t *testing.T) {
 
 	// This simulates the success of a build
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-3",
 	}
 	eMock.evalOk <- true
@@ -169,7 +169,7 @@ func TestBuild(t *testing.T) {
 	// This simulates the success of another build and ensure this
 	// new build is the one proposed for deployment.
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-4",
 	}
 	eMock.evalOk <- true
@@ -183,7 +183,7 @@ func TestBuild(t *testing.T) {
 
 	// This simulates the push of new commit while building
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id-5",
 	}
 	eMock.evalOk <- true
@@ -198,7 +198,7 @@ func TestDeploy(t *testing.T) {
 	tmp := t.TempDir()
 	bk := broker.New()
 	bk.Start()
-	f := fetcher.NewFetcher(r, bk)
+	f := fetcher.NewGitFetcher(r, bk)
 	f.Start(t.Context())
 
 	s, _ := store.New(bk, tmp+"/state.json", tmp+"/gcroots", 1, 1, 1)
@@ -210,7 +210,7 @@ func TestDeploy(t *testing.T) {
 		return false, "profile-path", nil
 	}
 	d := deployer.New(s, deployFunc, nil, "", bk)
-	e, _ := executor.NewNixOSFlake()
+	e, _ := executor.NewGitNixFlakeNixOS("", false)
 	bc := NewConfirmer(bk, Without, 0, "")
 	bc.Start()
 	dc := NewConfirmer(bk, Without, 0, "")
@@ -233,14 +233,14 @@ func TestIncorrectMachineId(t *testing.T) {
 	tmp := t.TempDir()
 	bk := broker.New()
 	bk.Start()
-	f := fetcher.NewFetcher(r, bk)
+	f := fetcher.NewGitFetcher(r, bk)
 	f.Start(t.Context())
 
 	s, _ := store.New(bk, tmp+"/state.json", tmp+"/gcroots", 1, 1, 1)
 	eMock := NewExecutorMock("invalid-machine-id")
 	b := builder.New(s, eMock, bk, "repoPath", "", "", "my-machine", false, 2*time.Second, 2*time.Second)
 	d := mkDeployerMock(t)
-	e, _ := executor.NewNixOSFlake()
+	e, _ := executor.NewGitNixFlakeNixOS("", false)
 	bc := NewConfirmer(bk, Without, 0, "")
 	bc.Start()
 	dc := NewConfirmer(bk, Without, 0, "")
@@ -249,7 +249,7 @@ func TestIncorrectMachineId(t *testing.T) {
 	go m.Run(t.Context())
 
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id",
 	}
 
@@ -264,7 +264,7 @@ func TestCorrectMachineId(t *testing.T) {
 	tmp := t.TempDir()
 	bk := broker.New()
 	bk.Start()
-	f := fetcher.NewFetcher(r, bk)
+	f := fetcher.NewGitFetcher(r, bk)
 	f.Start(t.Context())
 
 	s, _ := store.New(bk, tmp+"/state.json", tmp+"/gcroots", 1, 1, 1)
@@ -272,7 +272,7 @@ func TestCorrectMachineId(t *testing.T) {
 	eMock.evalOk <- true
 	b := builder.New(s, eMock, bk, "repoPath", "", "", "my-machine", false, 2*time.Second, 2*time.Second)
 	d := mkDeployerMock(t)
-	e, _ := executor.NewNixOSFlake()
+	e, _ := executor.NewGitNixFlakeNixOS("", false)
 	bc := NewConfirmer(bk, Without, 0, "")
 	bc.Start()
 	dc := NewConfirmer(bk, Without, 0, "")
@@ -281,13 +281,13 @@ func TestCorrectMachineId(t *testing.T) {
 	go m.Run(t.Context())
 
 	f.TriggerFetch([]string{"remote"})
-	r.RsCh <- &protobuf.RepositoryStatus{
+	r.RsCh <- &protobuf.GitRepositoryStatus{
 		SelectedCommitId: "id",
 	}
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assert.True(t, m.GetState().Builder.IsBuilding.GetValue())
-	}, 5*time.Second, 100*time.Millisecond)
+		assert.True(c, m.GetState().Builder.IsBuilding.GetValue())
+	}, 7*time.Second, 100*time.Millisecond)
 }
 
 func TestManagerWithDarwinConfiguration(t *testing.T) {
@@ -297,14 +297,14 @@ func TestManagerWithDarwinConfiguration(t *testing.T) {
 	eMock.buildOk <- true
 	bk := broker.New()
 	bk.Start()
-	f := fetcher.NewFetcher(r, bk)
+	f := fetcher.NewGitFetcher(r, bk)
 
 	s, _ := store.New(bk, tmp+"/state.json", tmp+"/gcroots", 1, 1, 1)
 	b := builder.New(s, eMock, bk, "repoPath", "", "", "my-machine", false, 2*time.Second, 2*time.Second)
 	d := mkDeployerMock(t)
 
 	// Test with Darwin configuration
-	e, _ := executor.NewNixDarwinFlake()
+	e, _ := executor.NewGitNixFlakeDarwin("", false)
 	bc := NewConfirmer(bk, Without, 0, "")
 	bc.Start()
 	dc := NewConfirmer(bk, Without, 0, "")

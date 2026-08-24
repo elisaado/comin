@@ -99,7 +99,10 @@ func deploymentList(dpls []*protobuf.Deployment, store *protobuf.Store, newestFi
 		}
 		fmt.Printf("  out path           %s\n", dpl.Generation.OutPath)
 		fmt.Printf("  generation uuid    %s\n", dpl.Generation.Uuid)
-		fmt.Printf("    commit id        %s\n", dpl.Generation.SelectedCommitId)
+		if dpl.Generation.Source != nil && dpl.Generation.Source.GetGit() != nil {
+			git := dpl.Generation.Source.GetGit()
+			fmt.Printf("    commit id        %s\n", git.SelectedCommitId)
+		}
 		if lists := retentionListsForDeployment(dpl.Uuid, store); len(lists) > 0 {
 			fmt.Printf("  part of retention  %s\n", strings.Join(lists, ", "))
 		}
